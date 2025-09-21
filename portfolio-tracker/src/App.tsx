@@ -11,6 +11,8 @@ interface Stock {
   currency: string;
   lastUpdated: string;
   name?: string;
+  change24h?: number;
+  changePercent?: number;
 }
 
 interface Cash {
@@ -29,29 +31,26 @@ interface SearchResult {
   market: string;
 }
 
-// API Configuration - Using Yahoo Finance (CORS-friendly)
+// API Configuration - Using Local Proxy Server
 const API_CONFIG = {
+  PROXY_BASE_URL: 'http://localhost:3001', // Your proxy server
   UPDATE_INTERVAL: 60000, // 1 minute
   RATE_LIMIT_DELAY: 2000, // 2 seconds between calls
 };
 
-// Yahoo Finance API Functions (CORS-friendly)
+// Stock APIs using proxy server
 const stockAPIs = {
-  // Yahoo Finance for US stocks
   US: async (symbol: string) => {
-    console.log(`Fetching US stock: ${symbol}`);
+    console.log(`Fetching US stock via proxy: ${symbol}`);
     
     try {
-      // Yahoo Finance API via proxy
-      const response = await fetch(
-        `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,
-        {
-          method: 'GET',
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
-        }
-      );
+      const response = await fetch(`${API_CONFIG.PROXY_BASE_URL}/api/stock/us/${symbol}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000
+      });
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -60,19 +59,18 @@ const stockAPIs = {
       const data = await response.json();
       console.log('US API response:', data);
       
-      if (data.chart?.result?.[0]?.meta?.regularMarketPrice) {
-        const price = data.chart.result[0].meta.regularMarketPrice;
-        const name = data.chart.result[0].meta.shortName || symbol;
-        
+      if (data.price) {
         return {
-          price: parseFloat(price),
+          price: data.price,
           currency: 'USD',
-          name: name,
-          lastUpdated: new Date().toISOString()
+          name: data.name || symbol,
+          lastUpdated: data.lastUpdated,
+          change24h: data.change24h,
+          changePercent: data.changePercent
         };
       }
       
-      throw new Error(`No price data found for ${symbol}`);
+      throw new Error('No price data received from proxy');
     } catch (error: any) {
       console.error(`Failed to fetch US stock ${symbol}:`, error);
       
@@ -93,27 +91,25 @@ const stockAPIs = {
       return {
         price: mockPrices[symbol.toUpperCase()] || (Math.random() * 200 + 50),
         currency: 'USD',
-        name: `${symbol} (Mock Data)`,
-        lastUpdated: new Date().toISOString()
+        name: `${symbol} (Mock Data - Proxy Error)`,
+        lastUpdated: new Date().toISOString(),
+        change24h: (Math.random() - 0.5) * 10,
+        changePercent: (Math.random() - 0.5) * 5
       };
     }
   },
 
-  // Yahoo Finance for Hong Kong stocks
   HK: async (symbol: string) => {
-    console.log(`Fetching HK stock: ${symbol}`);
+    console.log(`Fetching HK stock via proxy: ${symbol}`);
     
     try {
-      // Yahoo Finance uses .HK suffix for Hong Kong stocks
-      const response = await fetch(
-        `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.HK?interval=1d&range=1d`,
-        {
-          method: 'GET',
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
-        }
-      );
+      const response = await fetch(`${API_CONFIG.PROXY_BASE_URL}/api/stock/hk/${symbol}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000
+      });
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -122,19 +118,18 @@ const stockAPIs = {
       const data = await response.json();
       console.log('HK API response:', data);
       
-      if (data.chart?.result?.[0]?.meta?.regularMarketPrice) {
-        const price = data.chart.result[0].meta.regularMarketPrice;
-        const name = data.chart.result[0].meta.shortName || symbol;
-        
+      if (data.price) {
         return {
-          price: parseFloat(price),
+          price: data.price,
           currency: 'HKD',
-          name: name,
-          lastUpdated: new Date().toISOString()
+          name: data.name || symbol,
+          lastUpdated: data.lastUpdated,
+          change24h: data.change24h,
+          changePercent: data.changePercent
         };
       }
       
-      throw new Error(`No price data found for ${symbol}.HK`);
+      throw new Error('No price data received from proxy');
     } catch (error: any) {
       console.error(`Failed to fetch HK stock ${symbol}:`, error);
       
@@ -153,27 +148,25 @@ const stockAPIs = {
       return {
         price: mockPrices[symbol] || (Math.random() * 300 + 50),
         currency: 'HKD',
-        name: `${symbol} (Mock Data)`,
-        lastUpdated: new Date().toISOString()
+        name: `${symbol} (Mock Data - Proxy Error)`,
+        lastUpdated: new Date().toISOString(),
+        change24h: (Math.random() - 0.5) * 15,
+        changePercent: (Math.random() - 0.5) * 3
       };
     }
   },
 
-  // Taiwan stocks - Using Yahoo Finance
   TW: async (symbol: string) => {
-    console.log(`Fetching TW stock: ${symbol}`);
+    console.log(`Fetching TW stock via proxy: ${symbol}`);
     
     try {
-      // Yahoo Finance uses .TW suffix for Taiwan stocks
-      const response = await fetch(
-        `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.TW?interval=1d&range=1d`,
-        {
-          method: 'GET',
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
-        }
-      );
+      const response = await fetch(`${API_CONFIG.PROXY_BASE_URL}/api/stock/tw/${symbol}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000
+      });
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -182,19 +175,18 @@ const stockAPIs = {
       const data = await response.json();
       console.log('TW API response:', data);
       
-      if (data.chart?.result?.[0]?.meta?.regularMarketPrice) {
-        const price = data.chart.result[0].meta.regularMarketPrice;
-        const name = data.chart.result[0].meta.shortName || symbol;
-        
+      if (data.price) {
         return {
-          price: parseFloat(price),
+          price: data.price,
           currency: 'TWD',
-          name: name,
-          lastUpdated: new Date().toISOString()
+          name: data.name || symbol,
+          lastUpdated: data.lastUpdated,
+          change24h: data.change24h,
+          changePercent: data.changePercent
         };
       }
       
-      throw new Error(`No price data found for ${symbol}.TW`);
+      throw new Error('No price data received from proxy');
     } catch (error: any) {
       console.error(`Failed to fetch TW stock ${symbol}:`, error);
       
@@ -213,87 +205,107 @@ const stockAPIs = {
       return {
         price: mockPrices[symbol] || (Math.random() * 500 + 100),
         currency: 'TWD',
-        name: `${symbol} (Mock Data)`,
-        lastUpdated: new Date().toISOString()
+        name: `${symbol} (Mock Data - Proxy Error)`,
+        lastUpdated: new Date().toISOString(),
+        change24h: (Math.random() - 0.5) * 20,
+        changePercent: (Math.random() - 0.5) * 4
       };
     }
   }
 };
 
-// Simple Stock Search and Validation
+// Stock Search APIs using proxy server
 const searchAPIs = {
   US: async (query: string): Promise<SearchResult[]> => {
     if (!query || query.length < 1) return [];
     
-    const upperQuery = query.toUpperCase();
-    
-    // Check if it looks like a valid US ticker (1-5 letters)
-    if (!/^[A-Z]{1,5}$/.test(upperQuery)) {
-      return [];
+    try {
+      const response = await fetch(`${API_CONFIG.PROXY_BASE_URL}/api/search/us/${encodeURIComponent(query)}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error('US search error:', error);
     }
     
-    // Return the symbol as a valid search result
-    // Yahoo Finance will validate it when we try to fetch data
-    return [{
-      symbol: upperQuery,
-      name: `${upperQuery} (US Stock)`,
-      market: 'US'
-    }];
+    // Fallback search logic
+    const upperQuery = query.toUpperCase();
+    if (/^[A-Z]{1,5}$/.test(upperQuery)) {
+      return [{
+        symbol: upperQuery,
+        name: `${upperQuery} (US Stock)`,
+        market: 'US'
+      }];
+    }
+    return [];
   },
 
   HK: async (query: string): Promise<SearchResult[]> => {
     if (!query || query.length < 1) return [];
     
-    // Hong Kong stocks are typically 5 digits
-    let formattedQuery = query.trim();
+    try {
+      const response = await fetch(`${API_CONFIG.PROXY_BASE_URL}/api/search/hk/${encodeURIComponent(query)}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error('HK search error:', error);
+    }
     
-    // If it's all numbers, pad with zeros to make it 5 digits
+    // Fallback search logic
+    let formattedQuery = query.trim();
     if (/^\d+$/.test(formattedQuery)) {
       formattedQuery = formattedQuery.padStart(5, '0');
     }
     
-    // Check if it looks like a valid HK ticker (5 digits)
-    if (!/^\d{5}$/.test(formattedQuery)) {
-      return [];
+    if (/^\d{5}$/.test(formattedQuery)) {
+      return [{
+        symbol: formattedQuery,
+        name: `${formattedQuery} (HK Stock)`,
+        market: 'HK'
+      }];
     }
-    
-    return [{
-      symbol: formattedQuery,
-      name: `${formattedQuery} (HK Stock)`,
-      market: 'HK'
-    }];
+    return [];
   },
 
   TW: async (query: string): Promise<SearchResult[]> => {
     if (!query || query.length < 1) return [];
     
-    // Taiwan stocks are typically 4 digits
-    if (!/^\d{4}$/.test(query.trim())) {
-      return [];
+    try {
+      const response = await fetch(`${API_CONFIG.PROXY_BASE_URL}/api/search/tw/${encodeURIComponent(query)}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error('TW search error:', error);
     }
     
-    return [{
-      symbol: query.trim(),
-      name: `${query.trim()} (TW Stock)`,
-      market: 'TW'
-    }];
+    // Fallback search logic
+    if (/^\d{4}$/.test(query.trim())) {
+      return [{
+        symbol: query.trim(),
+        name: `${query.trim()} (TW Stock)`,
+        market: 'TW'
+      }];
+    }
+    return [];
   }
 };
 
-// Enhanced Currency Exchange API using ExchangeRate-API
+// Currency Exchange API using proxy server
 const getCurrencyRates = async (): Promise<ExchangeRates> => {
   try {
-    // ExchangeRate-API is still excellent for currency data
-    const response = await fetch(
-      `https://api.exchangerate-api.com/v4/latest/USD`
-    );
-    const data = await response.json();
+    console.log('Fetching currency rates via proxy');
+    const response = await fetch(`${API_CONFIG.PROXY_BASE_URL}/api/currency`);
     
-    if (data.rates) {
-      return data.rates;
+    if (response.ok) {
+      const data = await response.json();
+      if (data.rates) {
+        return data.rates;
+      }
     }
   } catch (error) {
-    console.error('Currency API error:', error);
+    console.error('Currency API error via proxy:', error);
   }
   
   // Fallback mock rates
@@ -309,18 +321,48 @@ const getCurrencyRates = async (): Promise<ExchangeRates> => {
   };
 };
 
-// Enhanced real-time updates with proper error handling
+// Enhanced real-time updates with proxy server
 const useRealTimeUpdates = (stocks: Stock[], setStocks: React.Dispatch<React.SetStateAction<Stock[]>>, setExchangeRates: React.Dispatch<React.SetStateAction<ExchangeRates>>) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [lastApiCall, setLastApiCall] = useState<Date | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
+  const [proxyStatus, setProxyStatus] = useState<'unknown' | 'online' | 'offline'>('unknown');
+
+  // Check proxy server health
+  const checkProxyHealth = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_CONFIG.PROXY_BASE_URL}/health`, {
+        method: 'GET',
+        timeout: 5000
+      });
+      
+      if (response.ok) {
+        setProxyStatus('online');
+        return true;
+      } else {
+        setProxyStatus('offline');
+        return false;
+      }
+    } catch (error) {
+      console.error('Proxy health check failed:', error);
+      setProxyStatus('offline');
+      return false;
+    }
+  }, []);
 
   const updateAllPrices = useCallback(async () => {
     if (!isOnline || stocks.length === 0) return;
     
-    // Rate limiting: Yahoo Finance is more lenient than AllTick
+    // Check proxy server first
+    const proxyOnline = await checkProxyHealth();
+    if (!proxyOnline) {
+      setErrors(['Proxy server is offline. Please start the proxy server at http://localhost:3001']);
+      return;
+    }
+    
+    // Rate limiting
     const now = new Date();
     if (lastApiCall && (now.getTime() - lastApiCall.getTime()) < API_CONFIG.RATE_LIMIT_DELAY) {
       console.log('Rate limited - skipping update');
@@ -335,7 +377,7 @@ const useRealTimeUpdates = (stocks: Stock[], setStocks: React.Dispatch<React.Set
     const failedStocks = [];
     
     try {
-      // Update stock prices one by one to respect rate limits
+      // Update stock prices one by one
       for (let i = 0; i < stocks.length; i++) {
         const stock = stocks[i];
         
@@ -344,11 +386,13 @@ const useRealTimeUpdates = (stocks: Stock[], setStocks: React.Dispatch<React.Set
           updatedStocks.push({
             ...stock,
             currentPrice: priceData.price,
-            lastUpdated: new Date().toISOString(),
-            name: priceData.name || stock.name
+            lastUpdated: priceData.lastUpdated,
+            name: priceData.name || stock.name,
+            change24h: priceData.change24h,
+            changePercent: priceData.changePercent
           });
           
-          console.log(`✅ Updated ${stock.symbol}: ${priceData.price}`);
+          console.log(`✅ Updated ${stock.symbol}: ${priceData.price.toFixed(2)}`);
           
         } catch (error: any) {
           console.error(`❌ Failed to update ${stock.symbol}:`, error);
@@ -361,13 +405,13 @@ const useRealTimeUpdates = (stocks: Stock[], setStocks: React.Dispatch<React.Set
           });
         }
         
-        // Add delay between API calls to respect rate limits
+        // Add delay between API calls
         if (i < stocks.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay between calls
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
       
-      // Update currency rates (this API is separate and has different limits)
+      // Update currency rates
       try {
         const newRates = await getCurrencyRates();
         setExchangeRates(newRates);
@@ -384,7 +428,7 @@ const useRealTimeUpdates = (stocks: Stock[], setStocks: React.Dispatch<React.Set
       localStorage.setItem('portfolioStocks', JSON.stringify(updatedStocks));
       
       // Show summary
-      const successCount = updatedStocks.length - failedStocks.length;
+      const successCount = updatedStocks.length - failedStocks.filter(f => !f.includes('Currency')).length;
       console.log(`📊 Update complete: ${successCount}/${stocks.length} stocks updated successfully`);
       
     } catch (error: any) {
@@ -393,13 +437,12 @@ const useRealTimeUpdates = (stocks: Stock[], setStocks: React.Dispatch<React.Set
     } finally {
       setIsUpdating(false);
     }
-  }, [stocks, isOnline, setStocks, setExchangeRates, lastApiCall]);
+  }, [stocks, isOnline, setStocks, setExchangeRates, lastApiCall, checkProxyHealth]);
 
   // Set up auto-refresh
   useEffect(() => {
     if (!isOnline) return;
     
-    // Update every minute
     const interval = setInterval(updateAllPrices, API_CONFIG.UPDATE_INTERVAL);
     return () => clearInterval(interval);
   }, [updateAllPrices, isOnline]);
@@ -418,19 +461,25 @@ const useRealTimeUpdates = (stocks: Stock[], setStocks: React.Dispatch<React.Set
     };
   }, []);
 
-  // Initial update (delayed to avoid immediate rate limiting)
+  // Initial proxy health check
+  useEffect(() => {
+    checkProxyHealth();
+  }, [checkProxyHealth]);
+
+  // Initial update
   useEffect(() => {
     if (stocks.length > 0 && isOnline) {
-      const timer = setTimeout(updateAllPrices, 3000); // 3 second delay
+      const timer = setTimeout(updateAllPrices, 3000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [stocks.length, isOnline, updateAllPrices]);
 
   return { 
     isUpdating, 
     lastUpdate, 
     isOnline, 
     errors,
+    proxyStatus,
     manualUpdate: updateAllPrices 
   };
 };
@@ -470,7 +519,7 @@ const useStockSearch = () => {
   return { searchResults, isSearching, searchStocks, setSearchResults, addManualTicker };
 };
 
-// Main App Component
+// Main App Component (same as before, but with proxy status indicator)
 const PortfolioTracker: React.FC = () => {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [cash, setCash] = useState<Cash[]>([]);
@@ -490,7 +539,7 @@ const PortfolioTracker: React.FC = () => {
   const [valuesVisible, setValuesVisible] = useState(true);
 
   // Custom hooks
-  const { isUpdating, lastUpdate, isOnline, errors, manualUpdate } = useRealTimeUpdates(stocks, setStocks, setExchangeRates);
+  const { isUpdating, lastUpdate, isOnline, errors, proxyStatus, manualUpdate } = useRealTimeUpdates(stocks, setStocks, setExchangeRates);
   const { searchResults, isSearching, searchStocks, setSearchResults, addManualTicker } = useStockSearch();
 
   // Load data from localStorage
@@ -562,7 +611,7 @@ const PortfolioTracker: React.FC = () => {
     return total;
   };
 
-  // Event handlers
+  // Event handlers (same as before)
   const addStock = () => {
     if (selectedStock && shares) {
       const newStock: Stock = {
@@ -652,9 +701,16 @@ const PortfolioTracker: React.FC = () => {
                 )}
                 {isOnline ? 'Online' : 'Offline'}
               </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className={`w-3 h-3 rounded-full ${
+                  proxyStatus === 'online' ? 'bg-green-500' : 
+                  proxyStatus === 'offline' ? 'bg-red-500' : 'bg-yellow-500'
+                }`}></div>
+                Proxy: {proxyStatus}
+              </div>
               <button
                 onClick={manualUpdate}
-                disabled={isUpdating || !isOnline}
+                disabled={isUpdating || !isOnline || proxyStatus === 'offline'}
                 className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <RefreshCw className={`w-4 h-4 ${isUpdating ? 'animate-spin' : ''}`} />
@@ -676,6 +732,22 @@ const PortfolioTracker: React.FC = () => {
             </div>
           )}
           
+          {/* Proxy Status Warning */}
+          {proxyStatus === 'offline' && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <h4 className="text-red-800 font-medium mb-2">Proxy Server Offline</h4>
+              <p className="text-red-700 text-sm">
+                The proxy server at http://localhost:3001 is not running. Please:
+              </p>
+              <ol className="text-red-700 text-sm mt-2 ml-4 list-decimal">
+                <li>Navigate to your proxy server folder</li>
+                <li>Run: npm install</li>
+                <li>Run: npm start</li>
+                <li>Refresh this page</li>
+              </ol>
+            </div>
+          )}
+          
           {/* Error Messages */}
           {errors.length > 0 && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -685,13 +757,13 @@ const PortfolioTracker: React.FC = () => {
                   <li key={index}>• {error}</li>
                 ))}
               </ul>
-              <p className="text-red-600 text-xs mt-2">
-                Some stocks may have failed to update. The system will retry on the next refresh cycle.
-              </p>
             </div>
           )}
         </div>
 
+        {/* Rest of the component remains the same as your original code */}
+        {/* Total Values, Add Currency, Assets List, and Modal components */}
+        
         {/* Total Values */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {displayCurrencies.map(currency => (
@@ -765,6 +837,13 @@ const PortfolioTracker: React.FC = () => {
                         </span>
                         <span className="font-medium">{stock.symbol}</span>
                         <span className="text-gray-600">{stock.shares} shares</span>
+                        {stock.changePercent && (
+                          <span className={`text-xs px-1 py-0.5 rounded ${
+                            stock.changePercent >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
+                          </span>
+                        )}
                       </div>
                       {stock.name && (
                         <p className="text-sm text-gray-500 mt-1">{stock.name}</p>
@@ -827,7 +906,7 @@ const PortfolioTracker: React.FC = () => {
         </div>
       </div>
 
-      {/* Add Asset Modal */}
+      {/* Add Asset Modal - Same as your original modal code */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-md w-full p-6">
@@ -861,9 +940,9 @@ const PortfolioTracker: React.FC = () => {
                     onChange={(e) => setSelectedMarket(e.target.value as 'US' | 'HK' | 'TW')}
                     className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="US">US Market (Yahoo Finance)</option>
-                    <option value="HK">Hong Kong (Yahoo Finance)</option>
-                    <option value="TW">Taiwan (Yahoo Finance)</option>
+                    <option value="US">US Market (Proxy Server)</option>
+                    <option value="HK">Hong Kong (Proxy Server)</option>
+                    <option value="TW">Taiwan (Proxy Server)</option>
                   </select>
                 </div>
 
