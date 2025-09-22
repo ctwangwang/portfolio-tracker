@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { PlusCircle, Search, DollarSign, TrendingUp, Eye, EyeOff, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import './App.css'; // We'll create this CSS file
 
 // Types
 interface Stock {
@@ -48,8 +49,7 @@ const stockAPIs = {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-        },
-        timeout: 10000
+        }
       });
       
       if (!response.ok) {
@@ -107,8 +107,7 @@ const stockAPIs = {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-        },
-        timeout: 10000
+        }
       });
       
       if (!response.ok) {
@@ -164,8 +163,7 @@ const stockAPIs = {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-        },
-        timeout: 10000
+        }
       });
       
       if (!response.ok) {
@@ -334,8 +332,7 @@ const useRealTimeUpdates = (stocks: Stock[], setStocks: React.Dispatch<React.Set
   const checkProxyHealth = useCallback(async () => {
     try {
       const response = await fetch(`${API_CONFIG.PROXY_BASE_URL}/health`, {
-        method: 'GET',
-        timeout: 5000
+        method: 'GET'
       });
       
       if (response.ok) {
@@ -519,7 +516,7 @@ const useStockSearch = () => {
   return { searchResults, isSearching, searchStocks, setSearchResults, addManualTicker };
 };
 
-// Main App Component (same as before, but with proxy status indicator)
+// Main App Component
 const PortfolioTracker: React.FC = () => {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [cash, setCash] = useState<Cash[]>([]);
@@ -611,7 +608,7 @@ const PortfolioTracker: React.FC = () => {
     return total;
   };
 
-  // Event handlers (same as before)
+  // Event handlers
   const addStock = () => {
     if (selectedStock && shares) {
       const newStock: Stock = {
@@ -683,63 +680,60 @@ const PortfolioTracker: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="app-container">
+      <div className="app-content">
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-              <TrendingUp className="text-blue-600" />
+        <div className="header-card">
+          <div className="header-top">
+            <h1 className="app-title">
+              <TrendingUp className="title-icon" />
               Portfolio Tracker
             </h1>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="header-controls">
+              <div className="status-indicator">
                 {isOnline ? (
-                  <Wifi className="w-4 h-4 text-green-500" />
+                  <Wifi className="status-icon online" />
                 ) : (
-                  <WifiOff className="w-4 h-4 text-red-500" />
+                  <WifiOff className="status-icon offline" />
                 )}
                 {isOnline ? 'Online' : 'Offline'}
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <div className={`w-3 h-3 rounded-full ${
-                  proxyStatus === 'online' ? 'bg-green-500' : 
-                  proxyStatus === 'offline' ? 'bg-red-500' : 'bg-yellow-500'
-                }`}></div>
+              <div className="status-indicator">
+                <div className={`proxy-dot ${proxyStatus}`}></div>
                 Proxy: {proxyStatus}
               </div>
               <button
                 onClick={manualUpdate}
                 disabled={isUpdating || !isOnline || proxyStatus === 'offline'}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="refresh-btn"
               >
-                <RefreshCw className={`w-4 h-4 ${isUpdating ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`refresh-icon ${isUpdating ? 'spinning' : ''}`} />
                 {isUpdating ? 'Updating...' : 'Refresh'}
               </button>
               <button
                 onClick={() => setValuesVisible(!valuesVisible)}
-                className="p-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+                className="visibility-btn"
               >
-                {valuesVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                {valuesVisible ? <Eye className="eye-icon" /> : <EyeOff className="eye-icon" />}
               </button>
             </div>
           </div>
           
           {lastUpdate && (
-            <div className="flex justify-between items-center text-sm text-gray-500">
+            <div className="update-info">
               <span>Last updated: {lastUpdate.toLocaleTimeString()}</span>
-              {isUpdating && <span className="text-blue-600">Updating prices...</span>}
+              {isUpdating && <span className="updating-text">Updating prices...</span>}
             </div>
           )}
           
           {/* Proxy Status Warning */}
           {proxyStatus === 'offline' && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <h4 className="text-red-800 font-medium mb-2">Proxy Server Offline</h4>
-              <p className="text-red-700 text-sm">
+            <div className="warning-card">
+              <h4 className="warning-title">Proxy Server Offline</h4>
+              <p className="warning-text">
                 The proxy server at http://localhost:3001 is not running. Please:
               </p>
-              <ol className="text-red-700 text-sm mt-2 ml-4 list-decimal">
+              <ol className="warning-list">
                 <li>Navigate to your proxy server folder</li>
                 <li>Run: npm install</li>
                 <li>Run: npm start</li>
@@ -750,9 +744,9 @@ const PortfolioTracker: React.FC = () => {
           
           {/* Error Messages */}
           {errors.length > 0 && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <h4 className="text-red-800 font-medium mb-2">Update Errors:</h4>
-              <ul className="text-red-700 text-sm space-y-1">
+            <div className="error-card">
+              <h4 className="error-title">Update Errors:</h4>
+              <ul className="error-list">
                 {errors.map((error, index) => (
                   <li key={index}>• {error}</li>
                 ))}
@@ -761,25 +755,22 @@ const PortfolioTracker: React.FC = () => {
           )}
         </div>
 
-        {/* Rest of the component remains the same as your original code */}
-        {/* Total Values, Add Currency, Assets List, and Modal components */}
-        
         {/* Total Values */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="totals-grid">
           {displayCurrencies.map(currency => (
-            <div key={currency} className="bg-white rounded-xl shadow-md p-4">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-lg font-semibold text-gray-700">{currency}</h3>
+            <div key={currency} className="total-card">
+              <div className="total-header">
+                <h3 className="total-currency">{currency}</h3>
                 {displayCurrencies.length > 1 && (
                   <button
                     onClick={() => removeCurrency(currency)}
-                    className="text-red-500 hover:text-red-700 text-sm"
+                    className="remove-currency-btn"
                   >
                     Remove
                   </button>
                 )}
               </div>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="total-value">
                 {valuesVisible ? `${calculateTotalValue(currency).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '****'}
               </p>
             </div>
@@ -787,13 +778,13 @@ const PortfolioTracker: React.FC = () => {
         </div>
 
         {/* Add Currency */}
-        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
-          <h3 className="text-lg font-semibold mb-3">Add Currency</h3>
-          <div className="flex gap-2">
+        <div className="add-currency-card">
+          <h3 className="section-title">Add Currency</h3>
+          <div className="add-currency-form">
             <select
               value={newCurrency}
               onChange={(e) => setNewCurrency(e.target.value)}
-              className="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="currency-select"
             >
               <option value="">Select currency...</option>
               {getAllCurrencies().map(currency => (
@@ -803,7 +794,7 @@ const PortfolioTracker: React.FC = () => {
             <button
               onClick={addNewCurrency}
               disabled={!newCurrency}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              className="add-currency-btn"
             >
               Add
             </button>
@@ -811,55 +802,53 @@ const PortfolioTracker: React.FC = () => {
         </div>
 
         {/* Assets List */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-800">Your Assets</h2>
+        <div className="assets-card">
+          <div className="assets-header">
+            <h2 className="assets-title">Your Assets</h2>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="add-asset-btn"
             >
-              <PlusCircle className="w-5 h-5" />
+              <PlusCircle className="add-icon" />
               Add Asset
             </button>
           </div>
 
           {/* Stocks */}
           {stocks.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-700 mb-3">Stocks</h3>
-              <div className="space-y-2">
+            <div className="stocks-section">
+              <h3 className="subsection-title">Stocks</h3>
+              <div className="stocks-list">
                 {stocks.map(stock => (
-                  <div key={stock.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                  <div key={stock.id} className="stock-item">
+                    <div className="stock-info">
+                      <div className="stock-main">
+                        <span className="market-badge">
                           {stock.market}
                         </span>
-                        <span className="font-medium">{stock.symbol}</span>
-                        <span className="text-gray-600">{stock.shares} shares</span>
+                        <span className="stock-symbol">{stock.symbol}</span>
+                        <span className="stock-shares">{stock.shares} shares</span>
                         {stock.changePercent && (
-                          <span className={`text-xs px-1 py-0.5 rounded ${
-                            stock.changePercent >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
+                          <span className={`change-badge ${stock.changePercent >= 0 ? 'positive' : 'negative'}`}>
                             {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
                           </span>
                         )}
                       </div>
                       {stock.name && (
-                        <p className="text-sm text-gray-500 mt-1">{stock.name}</p>
+                        <p className="stock-name">{stock.name}</p>
                       )}
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold">
+                    <div className="stock-values">
+                      <p className="stock-price">
                         {valuesVisible ? `${stock.currentPrice.toFixed(2)} ${stock.currency}` : '****'}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="stock-total">
                         Total: {valuesVisible ? `${(stock.shares * stock.currentPrice).toLocaleString()} ${stock.currency}` : '****'}
                       </p>
                     </div>
                     <button
                       onClick={() => removeStock(stock.id)}
-                      className="ml-4 text-red-500 hover:text-red-700"
+                      className="remove-stock-btn"
                     >
                       Remove
                     </button>
@@ -871,22 +860,22 @@ const PortfolioTracker: React.FC = () => {
 
           {/* Cash */}
           {cash.length > 0 && (
-            <div>
-              <h3 className="text-lg font-medium text-gray-700 mb-3">Cash</h3>
-              <div className="space-y-2">
+            <div className="cash-section">
+              <h3 className="subsection-title">Cash</h3>
+              <div className="cash-list">
                 {cash.map(cashItem => (
-                  <div key={cashItem.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="w-5 h-5 text-green-600" />
-                      <span className="font-medium">{cashItem.currency}</span>
+                  <div key={cashItem.id} className="cash-item">
+                    <div className="cash-info">
+                      <DollarSign className="cash-icon" />
+                      <span className="cash-currency">{cashItem.currency}</span>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <span className="font-semibold">
+                    <div className="cash-actions">
+                      <span className="cash-amount">
                         {valuesVisible ? `${cashItem.amount.toLocaleString()} ${cashItem.currency}` : '****'}
                       </span>
                       <button
                         onClick={() => removeCash(cashItem.id)}
-                        className="text-red-500 hover:text-red-700"
+                        className="remove-cash-btn"
                       >
                         Remove
                       </button>
@@ -898,32 +887,32 @@ const PortfolioTracker: React.FC = () => {
           )}
 
           {stocks.length === 0 && cash.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <div className="empty-state">
+              <TrendingUp className="empty-icon" />
               <p>No assets added yet. Click "Add Asset" to get started!</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Add Asset Modal - Same as your original modal code */}
+      {/* Add Asset Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h3 className="text-xl font-semibold mb-4">Add New Asset</h3>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 className="modal-title">Add New Asset</h3>
             
             {/* Asset Type Selection */}
-            <div className="mb-4">
-              <div className="flex gap-2">
+            <div className="asset-type-selector">
+              <div className="type-buttons">
                 <button
                   onClick={() => setAddType('stock')}
-                  className={`flex-1 p-2 rounded-lg ${addType === 'stock' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                  className={`type-btn ${addType === 'stock' ? 'active' : ''}`}
                 >
                   Stock
                 </button>
                 <button
                   onClick={() => setAddType('cash')}
-                  className={`flex-1 p-2 rounded-lg ${addType === 'cash' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                  className={`type-btn ${addType === 'cash' ? 'active' : ''}`}
                 >
                   Cash
                 </button>
@@ -933,12 +922,12 @@ const PortfolioTracker: React.FC = () => {
             {addType === 'stock' ? (
               <>
                 {/* Market Selection */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2">Market</label>
+                <div className="form-group">
+                  <label className="form-label">Market</label>
                   <select
                     value={selectedMarket}
                     onChange={(e) => setSelectedMarket(e.target.value as 'US' | 'HK' | 'TW')}
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="form-select"
                   >
                     <option value="US">US Market (Proxy Server)</option>
                     <option value="HK">Hong Kong (Proxy Server)</option>
@@ -947,10 +936,10 @@ const PortfolioTracker: React.FC = () => {
                 </div>
 
                 {/* Stock Search */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2">Search Stock</label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <div className="form-group">
+                  <label className="form-label">Search Stock</label>
+                  <div className="search-container">
+                    <Search className="search-icon" />
                     <input
                       type="text"
                       value={searchQuery}
@@ -967,14 +956,14 @@ const PortfolioTracker: React.FC = () => {
                         }
                       }}
                       placeholder={`Search ${selectedMarket} stocks or enter ticker directly (press Enter)`}
-                      className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="search-input"
                     />
                     {isSearching && (
-                      <RefreshCw className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 animate-spin" />
+                      <RefreshCw className="search-loading" />
                     )}
                   </div>
                   
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="search-hint">
                     {selectedMarket === 'US' 
                       ? 'Enter any US ticker (e.g., AAPL, TSLA, AMZN) or search to validate'
                       : selectedMarket === 'HK'
@@ -985,7 +974,7 @@ const PortfolioTracker: React.FC = () => {
                   
                   {/* Search Results */}
                   {searchResults.length > 0 && (
-                    <div className="mt-2 border rounded-lg max-h-40 overflow-y-auto">
+                    <div className="search-results">
                       {searchResults.map((result, index) => (
                         <button
                           key={index}
@@ -994,10 +983,10 @@ const PortfolioTracker: React.FC = () => {
                             setSearchQuery(`${result.symbol} - ${result.name}`);
                             setSearchResults([]);
                           }}
-                          className="w-full p-2 text-left hover:bg-gray-50 border-b last:border-b-0"
+                          className="search-result"
                         >
-                          <div className="font-medium">{result.symbol}</div>
-                          <div className="text-sm text-gray-600">{result.name}</div>
+                          <div className="result-symbol">{result.symbol}</div>
+                          <div className="result-name">{result.name}</div>
                         </button>
                       ))}
                     </div>
@@ -1005,35 +994,35 @@ const PortfolioTracker: React.FC = () => {
                   
                   {/* Manual Entry Hint */}
                   {searchQuery.trim() && searchResults.length === 0 && !isSearching && (
-                    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-blue-700">
-                        Press <kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">Enter</kbd> to add "{searchQuery.toUpperCase()}" directly
+                    <div className="manual-entry-hint">
+                      <p>
+                        Press <kbd className="kbd">Enter</kbd> to add "{searchQuery.toUpperCase()}" directly
                       </p>
                     </div>
                   )}
                 </div>
 
                 {/* Shares Input */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2">Number of Shares</label>
+                <div className="form-group">
+                  <label className="form-label">Number of Shares</label>
                   <input
                     type="number"
                     value={shares}
                     onChange={(e) => setShares(e.target.value)}
                     placeholder="Enter shares..."
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="form-input"
                   />
                 </div>
               </>
             ) : (
               <>
                 {/* Currency Selection */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2">Currency</label>
+                <div className="form-group">
+                  <label className="form-label">Currency</label>
                   <select
                     value={selectedCurrency}
                     onChange={(e) => setSelectedCurrency(e.target.value)}
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="form-select"
                   >
                     {Object.keys(exchangeRates).map(currency => (
                       <option key={currency} value={currency}>{currency}</option>
@@ -1042,24 +1031,24 @@ const PortfolioTracker: React.FC = () => {
                 </div>
 
                 {/* Amount Input */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2">Amount</label>
+                <div className="form-group">
+                  <label className="form-label">Amount</label>
                   <input
                     type="number"
                     value={cashAmount}
                     onChange={(e) => setCashAmount(e.target.value)}
                     placeholder="Enter amount..."
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="form-input"
                   />
                 </div>
               </>
             )}
 
             {/* Modal Actions */}
-            <div className="flex gap-3">
+            <div className="modal-actions">
               <button
                 onClick={resetModal}
-                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                className="cancel-btn"
               >
                 Cancel
               </button>
@@ -1070,7 +1059,7 @@ const PortfolioTracker: React.FC = () => {
                     ? (!selectedStock || !shares)
                     : (!selectedCurrency || !cashAmount)
                 }
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="submit-btn"
               >
                 Add {addType === 'stock' ? 'Stock' : 'Cash'}
               </button>
