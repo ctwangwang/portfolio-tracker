@@ -264,8 +264,8 @@ async function loadPortfolio() {
             holdingsHTML += '</tbody></table>';
             holdingsContainer.innerHTML = holdingsHTML;
             
-            // Display total values in multiple currencies
-            const currencies = ['USD', 'CAD', 'HKD', 'TWD', 'CNY', 'JPY'];
+            // UPDATED: Reordered currencies - USD, CAD, HKD, TWD, CNY, JPY, EUR, GBP
+            const currencies = ['USD', 'CAD', 'HKD', 'TWD', 'CNY', 'JPY', 'EUR', 'GBP'];
             let totalHTML = '<div class="currency-grid">';
             
             currencies.forEach(currency => {

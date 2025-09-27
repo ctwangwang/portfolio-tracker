@@ -23,7 +23,8 @@ class CurrencyService {
   }
 
   async getMultipleCurrencies(amount, fromCurrency) {
-    const currencies = ['USD', 'CAD', 'HKD', 'TWD', 'CNY', 'JPY'];
+    // UPDATED: Add EUR and GBP to the currencies list
+    const currencies = ['USD', 'CAD', 'HKD', 'TWD', 'CNY', 'JPY', 'EUR', 'GBP'];
     const results = {};
 
     for (const currency of currencies) {
