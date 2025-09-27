@@ -69,7 +69,6 @@ class PortfolioController {
     }
   }
 
-  // NEW: Add Taiwan equity method
   async addTWEquity(req, res) {
     try {
       const { symbol, quantity } = req.body;
@@ -101,7 +100,39 @@ class PortfolioController {
     }
   }
 
-  // UPDATED: Handle multiple currencies including TWD
+  // NEW: Add crypto method
+  async addCrypto(req, res) {
+    try {
+      const { symbol, quantity } = req.body;
+
+      if (!symbol || !quantity) {
+        return res.status(400).json({ error: 'Symbol and quantity are required' });
+      }
+
+      const cryptoData = await stockService.getCryptoPrice(symbol);
+      
+      const holding = {
+        symbol: cryptoData.symbol,
+        quantity: parseFloat(quantity),
+        price: cryptoData.price,
+        currency: cryptoData.currency,
+        value: cryptoData.price * quantity,
+        market: 'CRYPTO'
+      };
+
+      this.portfolio.push(holding);
+
+      res.json({
+        success: true,
+        holding,
+        portfolio: this.portfolio
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  // Existing getPortfolioValue method (unchanged - already handles USD)
   async getPortfolioValue(req, res) {
     try {
       if (this.portfolio.length === 0) {

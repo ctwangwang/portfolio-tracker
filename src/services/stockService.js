@@ -4,6 +4,29 @@ class StockService {
   constructor() {
     this.alphaVantageKey = process.env.ALPHA_VANTAGE_API_KEY;
     this.finnhubKey = process.env.FINNHUB_API_KEY;
+    
+    // CoinGecko symbol to ID mapping
+    this.cryptoIdMap = {
+      'BTC': 'bitcoin',
+      'ETH': 'ethereum',
+      'USDT': 'tether',
+      'BNB': 'binancecoin',
+      'SOL': 'solana',
+      'ADA': 'cardano',
+      'XRP': 'ripple',
+      'DOT': 'polkadot',
+      'DOGE': 'dogecoin',
+      'MATIC': 'matic-network',
+      'AVAX': 'avalanche-2',
+      'LINK': 'chainlink',
+      'UNI': 'uniswap',
+      'ATOM': 'cosmos',
+      'LTC': 'litecoin',
+      'BCH': 'bitcoin-cash',
+      'ALGO': 'algorand',
+      'TRX': 'tron',
+      'SHIB': 'shiba-inu'
+    };
   }
 
   // Existing US stock method (unchanged)
@@ -74,14 +97,11 @@ class StockService {
     }
   }
 
-  // NEW: Taiwan stock method
+  // Existing Taiwan stock method (unchanged)
   async getTWStockPrice(symbol) {
     try {
-      // Format Taiwan stock symbol for Yahoo Finance
-      // Yahoo format: 2330.TW for Taiwan stocks
       let formattedSymbol = symbol;
       
-      // If user enters just the number (e.g., "2330"), add .TW
       if (!symbol.includes('.TW')) {
         formattedSymbol = `${symbol}.TW`;
       }
@@ -114,6 +134,44 @@ class StockService {
         throw new Error(`Stock symbol ${symbol} not found. Please check the symbol.`);
       }
       throw new Error(`Failed to fetch Taiwan stock price for ${symbol}: ${error.message}`);
+    }
+  }
+
+  // NEW: Crypto price method using CoinGecko
+  async getCryptoPrice(symbol) {
+    try {
+      const upperSymbol = symbol.toUpperCase();
+      
+      // Get CoinGecko ID from mapping
+      const coinId = this.cryptoIdMap[upperSymbol];
+      
+      if (!coinId) {
+        throw new Error(`Crypto symbol ${symbol} not supported. Supported: ${Object.keys(this.cryptoIdMap).join(', ')}`);
+      }
+      
+      const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
+        params: {
+          ids: coinId,
+          vs_currencies: 'usd'
+        }
+      });
+
+      const price = response.data[coinId]?.usd;
+      
+      if (!price) {
+        throw new Error(`No price data found for ${symbol}`);
+      }
+
+      return {
+        symbol: upperSymbol,
+        price: parseFloat(price),
+        currency: 'USD'
+      };
+    } catch (error) {
+      if (error.message.includes('not supported')) {
+        throw error;
+      }
+      throw new Error(`Failed to fetch crypto price for ${symbol}: ${error.message}`);
     }
   }
 }

@@ -12,11 +12,17 @@ const hkSymbolInput = document.getElementById('hkSymbol');
 const hkQuantityInput = document.getElementById('hkQuantity');
 const addHKStockMessage = document.getElementById('addHKStockMessage');
 
-// NEW: Taiwan DOM Elements
+// Taiwan DOM Elements
 const addTWStockForm = document.getElementById('addTWStockForm');
 const twSymbolInput = document.getElementById('twSymbol');
 const twQuantityInput = document.getElementById('twQuantity');
 const addTWStockMessage = document.getElementById('addTWStockMessage');
+
+// NEW: Crypto DOM Elements
+const addCryptoForm = document.getElementById('addCryptoForm');
+const cryptoSymbolInput = document.getElementById('cryptoSymbol');
+const cryptoQuantityInput = document.getElementById('cryptoQuantity');
+const addCryptoMessage = document.getElementById('addCryptoMessage');
 
 // Common elements
 const holdingsContainer = document.getElementById('holdingsContainer');
@@ -110,7 +116,7 @@ addHKStockForm.addEventListener('submit', async (e) => {
     }
 });
 
-// NEW: Add Taiwan stock
+// Add Taiwan stock (unchanged)
 addTWStockForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -141,6 +147,40 @@ addTWStockForm.addEventListener('submit', async (e) => {
         }
     } catch (error) {
         showMessage(addTWStockMessage, `Error: ${error.message}`, 'error');
+    }
+});
+
+// NEW: Add Crypto
+addCryptoForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const symbol = cryptoSymbolInput.value.trim().toUpperCase();
+    const quantity = parseFloat(cryptoQuantityInput.value);
+    
+    try {
+        addCryptoMessage.textContent = 'Adding cryptocurrency...';
+        addCryptoMessage.className = 'message loading';
+        
+        const response = await fetch(`${API_BASE}/add/crypto`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ symbol, quantity })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage(addCryptoMessage, `Successfully added ${quantity} ${symbol}!`, 'success');
+            cryptoSymbolInput.value = '';
+            cryptoQuantityInput.value = '';
+            loadPortfolio();
+        } else {
+            showMessage(addCryptoMessage, `Error: ${data.error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(addCryptoMessage, `Error: ${error.message}`, 'error');
     }
 });
 
