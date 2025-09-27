@@ -10,7 +10,7 @@
     <div class="container">
         <header>
             <h1>📊 Portfolio Tracker</h1>
-            <p>Track your US and HK equities in multiple currencies</p>
+            <p>Track your US, HK, and Taiwan equities in multiple currencies</p>
         </header>
 
         <!-- Add US Stock Form -->
@@ -30,7 +30,7 @@
             <div id="addStockMessage" class="message"></div>
         </div>
 
-        <!-- NEW: Add HK Stock Form -->
+        <!-- Add HK Stock Form -->
         <div class="card">
             <h2>🇭🇰 Add Hong Kong Stock</h2>
             <form id="addHKStockForm">
@@ -45,6 +45,23 @@
                 <button type="submit" class="btn btn-primary">Add HK Stock</button>
             </form>
             <div id="addHKStockMessage" class="message"></div>
+        </div>
+
+        <!-- NEW: Add Taiwan Stock Form -->
+        <div class="card">
+            <h2>🇹🇼 Add Taiwan Stock</h2>
+            <form id="addTWStockForm">
+                <div class="form-group">
+                    <label for="twSymbol">Stock Code:</label>
+                    <input type="text" id="twSymbol" placeholder="e.g., 2330 (TSMC), 2317 (Foxconn)" required>
+                </div>
+                <div class="form-group">
+                    <label for="twQuantity">Quantity:</label>
+                    <input type="number" id="twQuantity" min="1" placeholder="e.g., 100" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add TW Stock</button>
+            </form>
+            <div id="addTWStockMessage" class="message"></div>
         </div>
 
         <!-- Portfolio Holdings -->

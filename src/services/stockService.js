@@ -33,21 +33,16 @@ class StockService {
     }
   }
 
-  // UPDATED: HK stock method using Yahoo Finance
+  // Existing HK stock method (unchanged)
   async getHKStockPrice(symbol) {
     try {
-      // Format HK stock symbol for Yahoo Finance
-      // Yahoo format: 0700.HK for Hong Kong stocks
       let formattedSymbol = symbol;
       
-      // If user enters just the number (e.g., "0700"), add .HK
       if (!symbol.includes('.HK')) {
-        // Pad with zeros if needed (e.g., "700" -> "0700")
         const paddedNumber = symbol.padStart(4, '0');
         formattedSymbol = `${paddedNumber}.HK`;
       }
       
-      // Yahoo Finance API endpoint (free, no key required)
       const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${formattedSymbol}`, {
         params: {
           interval: '1d',
@@ -76,6 +71,49 @@ class StockService {
         throw new Error(`Stock symbol ${symbol} not found. Please check the symbol.`);
       }
       throw new Error(`Failed to fetch HK stock price for ${symbol}: ${error.message}`);
+    }
+  }
+
+  // NEW: Taiwan stock method
+  async getTWStockPrice(symbol) {
+    try {
+      // Format Taiwan stock symbol for Yahoo Finance
+      // Yahoo format: 2330.TW for Taiwan stocks
+      let formattedSymbol = symbol;
+      
+      // If user enters just the number (e.g., "2330"), add .TW
+      if (!symbol.includes('.TW')) {
+        formattedSymbol = `${symbol}.TW`;
+      }
+      
+      const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${formattedSymbol}`, {
+        params: {
+          interval: '1d',
+          range: '1d'
+        },
+        headers: {
+          'User-Agent': 'Mozilla/5.0'
+        }
+      });
+
+      const result = response.data.chart.result[0];
+      
+      if (!result || !result.meta || !result.meta.regularMarketPrice) {
+        throw new Error(`No data found for Taiwan symbol: ${symbol}`);
+      }
+
+      const price = result.meta.regularMarketPrice;
+      
+      return {
+        symbol: symbol,
+        price: parseFloat(price),
+        currency: 'TWD'
+      };
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error(`Stock symbol ${symbol} not found. Please check the symbol.`);
+      }
+      throw new Error(`Failed to fetch Taiwan stock price for ${symbol}: ${error.message}`);
     }
   }
 }

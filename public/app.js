@@ -5,16 +5,24 @@ const addStockForm = document.getElementById('addStockForm');
 const symbolInput = document.getElementById('symbol');
 const quantityInput = document.getElementById('quantity');
 const addStockMessage = document.getElementById('addStockMessage');
-const holdingsContainer = document.getElementById('holdingsContainer');
-const totalValueContainer = document.getElementById('totalValueContainer');
-const refreshBtn = document.getElementById('refreshBtn');
-const clearBtn = document.getElementById('clearBtn');
 
-// NEW: HK DOM Elements
+// HK DOM Elements
 const addHKStockForm = document.getElementById('addHKStockForm');
 const hkSymbolInput = document.getElementById('hkSymbol');
 const hkQuantityInput = document.getElementById('hkQuantity');
 const addHKStockMessage = document.getElementById('addHKStockMessage');
+
+// NEW: Taiwan DOM Elements
+const addTWStockForm = document.getElementById('addTWStockForm');
+const twSymbolInput = document.getElementById('twSymbol');
+const twQuantityInput = document.getElementById('twQuantity');
+const addTWStockMessage = document.getElementById('addTWStockMessage');
+
+// Common elements
+const holdingsContainer = document.getElementById('holdingsContainer');
+const totalValueContainer = document.getElementById('totalValueContainer');
+const refreshBtn = document.getElementById('refreshBtn');
+const clearBtn = document.getElementById('clearBtn');
 
 // Show message
 function showMessage(element, message, type) {
@@ -34,7 +42,7 @@ function formatCurrency(amount, currency) {
     }).format(amount);
 }
 
-// Existing: Add US stock
+// Add US stock (unchanged)
 addStockForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -68,7 +76,7 @@ addStockForm.addEventListener('submit', async (e) => {
     }
 });
 
-// NEW: Add HK stock
+// Add HK stock (unchanged)
 addHKStockForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -99,6 +107,40 @@ addHKStockForm.addEventListener('submit', async (e) => {
         }
     } catch (error) {
         showMessage(addHKStockMessage, `Error: ${error.message}`, 'error');
+    }
+});
+
+// NEW: Add Taiwan stock
+addTWStockForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const symbol = twSymbolInput.value.trim();
+    const quantity = parseInt(twQuantityInput.value);
+    
+    try {
+        addTWStockMessage.textContent = 'Adding Taiwan stock...';
+        addTWStockMessage.className = 'message loading';
+        
+        const response = await fetch(`${API_BASE}/add/tw`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ symbol, quantity })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage(addTWStockMessage, `Successfully added ${quantity} shares of ${symbol} (TW)!`, 'success');
+            twSymbolInput.value = '';
+            twQuantityInput.value = '';
+            loadPortfolio();
+        } else {
+            showMessage(addTWStockMessage, `Error: ${data.error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(addTWStockMessage, `Error: ${error.message}`, 'error');
     }
 });
 
