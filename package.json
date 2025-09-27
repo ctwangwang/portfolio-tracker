@@ -2,29 +2,28 @@
   "name": "portfolio-tracker",
   "version": "1.0.0",
   "description": "Multi-currency equity portfolio tracker",
-  "main": "index.js",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ctwangwang/portfolio-tracker.git"
-  },
-  "keywords": [],
+  "keywords": [
+    "portfolio",
+    "stocks",
+    "crypto",
+    "tracker"
+  ],
   "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/ctwangwang/portfolio-tracker/issues"
-  },
-  "homepage": "https://github.com/ctwangwang/portfolio-tracker#readme",
+  "license": "MIT",
   "dependencies": {
-    "axios": "^1.12.2",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0"
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.0.1"
   }
 }
