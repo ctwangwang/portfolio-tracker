@@ -100,7 +100,38 @@ class PortfolioController {
     }
   }
 
-  // NEW: Add crypto method
+  // NEW: Add Canada equity method
+  async addCAEquity(req, res) {
+    try {
+      const { symbol, quantity } = req.body;
+
+      if (!symbol || !quantity) {
+        return res.status(400).json({ error: 'Symbol and quantity are required' });
+      }
+
+      const stockData = await stockService.getCAStockPrice(symbol);
+      
+      const holding = {
+        symbol: stockData.symbol,
+        quantity: parseInt(quantity),
+        price: stockData.price,
+        currency: stockData.currency,
+        value: stockData.price * quantity,
+        market: 'CA'
+      };
+
+      this.portfolio.push(holding);
+
+      res.json({
+        success: true,
+        holding,
+        portfolio: this.portfolio
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   async addCrypto(req, res) {
     try {
       const { symbol, quantity } = req.body;
@@ -132,7 +163,7 @@ class PortfolioController {
     }
   }
 
-  // Existing getPortfolioValue method (unchanged - already handles USD)
+  // UPDATED: Handle multiple currencies including CAD
   async getPortfolioValue(req, res) {
     try {
       if (this.portfolio.length === 0) {
@@ -150,6 +181,9 @@ class PortfolioController {
           totalUSD += usdValue;
         } else if (holding.currency === 'TWD') {
           const usdValue = await currencyService.convertCurrency(holding.value, 'TWD', 'USD');
+          totalUSD += usdValue;
+        } else if (holding.currency === 'CAD') {
+          const usdValue = await currencyService.convertCurrency(holding.value, 'CAD', 'USD');
           totalUSD += usdValue;
         }
       }

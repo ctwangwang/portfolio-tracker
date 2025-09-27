@@ -1,10 +1,16 @@
 const API_BASE = '/api/portfolio';
 
-// DOM Elements - Existing
+// DOM Elements - US
 const addStockForm = document.getElementById('addStockForm');
 const symbolInput = document.getElementById('symbol');
 const quantityInput = document.getElementById('quantity');
 const addStockMessage = document.getElementById('addStockMessage');
+
+// Canada DOM Elements
+const addCAStockForm = document.getElementById('addCAStockForm');
+const caSymbolInput = document.getElementById('caSymbol');
+const caQuantityInput = document.getElementById('caQuantity');
+const addCAStockMessage = document.getElementById('addCAStockMessage');
 
 // HK DOM Elements
 const addHKStockForm = document.getElementById('addHKStockForm');
@@ -18,7 +24,7 @@ const twSymbolInput = document.getElementById('twSymbol');
 const twQuantityInput = document.getElementById('twQuantity');
 const addTWStockMessage = document.getElementById('addTWStockMessage');
 
-// NEW: Crypto DOM Elements
+// Crypto DOM Elements
 const addCryptoForm = document.getElementById('addCryptoForm');
 const cryptoSymbolInput = document.getElementById('cryptoSymbol');
 const cryptoQuantityInput = document.getElementById('cryptoQuantity');
@@ -48,7 +54,7 @@ function formatCurrency(amount, currency) {
     }).format(amount);
 }
 
-// Add US stock (unchanged)
+// Add US stock
 addStockForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -82,7 +88,41 @@ addStockForm.addEventListener('submit', async (e) => {
     }
 });
 
-// Add HK stock (unchanged)
+// Add Canada stock
+addCAStockForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const symbol = caSymbolInput.value.trim().toUpperCase();
+    const quantity = parseInt(caQuantityInput.value);
+    
+    try {
+        addCAStockMessage.textContent = 'Adding Canada stock...';
+        addCAStockMessage.className = 'message loading';
+        
+        const response = await fetch(`${API_BASE}/add/ca`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ symbol, quantity })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage(addCAStockMessage, `Successfully added ${quantity} shares of ${symbol} (CA)!`, 'success');
+            caSymbolInput.value = '';
+            caQuantityInput.value = '';
+            loadPortfolio();
+        } else {
+            showMessage(addCAStockMessage, `Error: ${data.error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(addCAStockMessage, `Error: ${error.message}`, 'error');
+    }
+});
+
+// Add HK stock
 addHKStockForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -116,7 +156,7 @@ addHKStockForm.addEventListener('submit', async (e) => {
     }
 });
 
-// Add Taiwan stock (unchanged)
+// Add Taiwan stock
 addTWStockForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -150,7 +190,7 @@ addTWStockForm.addEventListener('submit', async (e) => {
     }
 });
 
-// NEW: Add Crypto
+// Add Crypto
 addCryptoForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -184,7 +224,7 @@ addCryptoForm.addEventListener('submit', async (e) => {
     }
 });
 
-// Load portfolio (unchanged)
+// Load portfolio
 async function loadPortfolio() {
     try {
         holdingsContainer.innerHTML = '<p class="loading">Loading portfolio...</p>';
@@ -252,7 +292,7 @@ async function loadPortfolio() {
     }
 }
 
-// Clear portfolio (unchanged)
+// Clear portfolio
 clearBtn.addEventListener('click', async () => {
     if (!confirm('Are you sure you want to clear your entire portfolio?')) {
         return;
@@ -272,8 +312,8 @@ clearBtn.addEventListener('click', async () => {
     }
 });
 
-// Refresh button (unchanged)
+// Refresh button
 refreshBtn.addEventListener('click', loadPortfolio);
 
-// Load portfolio on page load (unchanged)
+// Load portfolio on page load
 loadPortfolio();

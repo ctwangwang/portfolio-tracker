@@ -137,12 +137,54 @@ class StockService {
     }
   }
 
-  // NEW: Crypto price method using CoinGecko
+  // NEW: Canada stock method
+  async getCAStockPrice(symbol) {
+    try {
+      // Format Canada stock symbol for Yahoo Finance
+      // Yahoo format: SHOP.TO for Toronto Stock Exchange stocks
+      let formattedSymbol = symbol;
+      
+      // If user enters just the symbol (e.g., "SHOP"), add .TO
+      if (!symbol.includes('.TO')) {
+        formattedSymbol = `${symbol}.TO`;
+      }
+      
+      const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${formattedSymbol}`, {
+        params: {
+          interval: '1d',
+          range: '1d'
+        },
+        headers: {
+          'User-Agent': 'Mozilla/5.0'
+        }
+      });
+
+      const result = response.data.chart.result[0];
+      
+      if (!result || !result.meta || !result.meta.regularMarketPrice) {
+        throw new Error(`No data found for Canada symbol: ${symbol}`);
+      }
+
+      const price = result.meta.regularMarketPrice;
+      
+      return {
+        symbol: symbol,
+        price: parseFloat(price),
+        currency: 'CAD'
+      };
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error(`Stock symbol ${symbol} not found. Please check the symbol.`);
+      }
+      throw new Error(`Failed to fetch Canada stock price for ${symbol}: ${error.message}`);
+    }
+  }
+
+  // Existing Crypto method (unchanged)
   async getCryptoPrice(symbol) {
     try {
       const upperSymbol = symbol.toUpperCase();
       
-      // Get CoinGecko ID from mapping
       const coinId = this.cryptoIdMap[upperSymbol];
       
       if (!coinId) {

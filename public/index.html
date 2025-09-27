@@ -10,7 +10,7 @@
     <div class="container">
         <header>
             <h1>📊 Portfolio Tracker</h1>
-            <p>Track your US, HK, Taiwan equities and Crypto in multiple currencies</p>
+            <p>Track your US, Canada, HK, Taiwan equities and Crypto in multiple currencies</p>
         </header>
 
         <!-- Add US Stock Form -->
@@ -28,6 +28,23 @@
                 <button type="submit" class="btn btn-primary">Add US Stock</button>
             </form>
             <div id="addStockMessage" class="message"></div>
+        </div>
+
+        <!-- NEW: Add Canada Stock Form -->
+        <div class="card">
+            <h2>🇨🇦 Add Canada Stock</h2>
+            <form id="addCAStockForm">
+                <div class="form-group">
+                    <label for="caSymbol">Stock Symbol (TSX):</label>
+                    <input type="text" id="caSymbol" placeholder="e.g., SHOP, TD, RY, ENB" required>
+                </div>
+                <div class="form-group">
+                    <label for="caQuantity">Quantity:</label>
+                    <input type="number" id="caQuantity" min="1" placeholder="e.g., 50" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add CA Stock</button>
+            </form>
+            <div id="addCAStockMessage" class="message"></div>
         </div>
 
         <!-- Add HK Stock Form -->
@@ -64,7 +81,7 @@
             <div id="addTWStockMessage" class="message"></div>
         </div>
 
-        <!-- NEW: Add Crypto Form -->
+        <!-- Add Crypto Form -->
         <div class="card">
             <h2>₿ Add Cryptocurrency</h2>
             <form id="addCryptoForm">
