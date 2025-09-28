@@ -29,34 +29,41 @@ class StockService {
     };
   }
 
-  // Existing US stock method (unchanged)
+  // UPDATED: US stock method using Yahoo Finance API
   async getUSStockPrice(symbol) {
     try {
-      const response = await axios.get('https://www.alphavantage.co/query', {
-        params: {
-          function: 'GLOBAL_QUOTE',
-          symbol: symbol,
-          apikey: this.alphaVantageKey
+      const response = await axios.get(
+        `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`,
+        {
+          params: {
+            interval: '1d',
+            range: '1d'
+          },
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
         }
-      });
+      );
 
-      const quote = response.data['Global Quote'];
+      const result = response.data.chart.result[0];
       
-      if (!quote || Object.keys(quote).length === 0) {
+      if (!result || !result.meta || !result.meta.regularMarketPrice) {
         throw new Error(`No data found for symbol: ${symbol}`);
       }
 
       return {
-        symbol: quote['01. symbol'],
-        price: parseFloat(quote['05. price']),
-        currency: 'USD'
+        symbol: result.meta.symbol || symbol,
+        price: parseFloat(result.meta.regularMarketPrice),
+        currency: result.meta.currency || 'USD'
       };
     } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error(`Stock symbol ${symbol} not found. Please check the symbol.`);
+      }
       throw new Error(`Failed to fetch US stock price for ${symbol}: ${error.message}`);
     }
   }
 
-  // Existing HK stock method (unchanged)
   async getHKStockPrice(symbol) {
     try {
       let formattedSymbol = symbol;
@@ -97,7 +104,6 @@ class StockService {
     }
   }
 
-  // Existing Taiwan stock method (unchanged)
   async getTWStockPrice(symbol) {
     try {
       let formattedSymbol = symbol;
@@ -137,14 +143,10 @@ class StockService {
     }
   }
 
-  // NEW: Canada stock method
   async getCAStockPrice(symbol) {
     try {
-      // Format Canada stock symbol for Yahoo Finance
-      // Yahoo format: SHOP.TO for Toronto Stock Exchange stocks
       let formattedSymbol = symbol;
       
-      // If user enters just the symbol (e.g., "SHOP"), add .TO
       if (!symbol.includes('.TO')) {
         formattedSymbol = `${symbol}.TO`;
       }
@@ -180,23 +182,70 @@ class StockService {
     }
   }
 
-  // Existing Crypto method (unchanged)
+  // FIXED: Crypto with multiple API fallbacks
   async getCryptoPrice(symbol) {
+    const upperSymbol = symbol.toUpperCase();
+    
+    // Try CoinCap first (no rate limits, no API key needed)
     try {
-      const upperSymbol = symbol.toUpperCase();
+      const response = await axios.get(
+        `https://api.coincap.io/v2/assets/${upperSymbol.toLowerCase()}`,
+        { timeout: 5000 }
+      );
       
+      const price = parseFloat(response.data.data.priceUsd);
+      
+      if (price) {
+        return {
+          symbol: upperSymbol,
+          price: price,
+          currency: 'USD'
+        };
+      }
+    } catch (error) {
+      console.log(`CoinCap failed for ${upperSymbol}, trying Binance...`);
+    }
+
+    // Try Binance as second option (no API key needed)
+    try {
+      const pair = `${upperSymbol}USDT`;
+      const response = await axios.get(
+        'https://api.binance.com/api/v3/ticker/price',
+        {
+          params: { symbol: pair },
+          timeout: 5000
+        }
+      );
+      
+      const price = parseFloat(response.data.price);
+      
+      return {
+        symbol: upperSymbol,
+        price: price,
+        currency: 'USD'
+      };
+    } catch (error) {
+      console.log(`Binance failed for ${upperSymbol}, trying CoinGecko...`);
+    }
+
+    // Try CoinGecko as last resort (has rate limits)
+    try {
       const coinId = this.cryptoIdMap[upperSymbol];
       
       if (!coinId) {
         throw new Error(`Crypto symbol ${symbol} not supported. Supported: ${Object.keys(this.cryptoIdMap).join(', ')}`);
       }
       
-      const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
-        params: {
-          ids: coinId,
-          vs_currencies: 'usd'
+      const response = await axios.get(
+        'https://api.coingecko.com/api/v3/simple/price',
+        {
+          params: {
+            ids: coinId,
+            vs_currencies: 'usd'
+          },
+          timeout: 5000
         }
-      });
+      );
 
       const price = response.data[coinId]?.usd;
       
@@ -213,7 +262,7 @@ class StockService {
       if (error.message.includes('not supported')) {
         throw error;
       }
-      throw new Error(`Failed to fetch crypto price for ${symbol}: ${error.message}`);
+      throw new Error(`Failed to fetch crypto price for ${symbol} from all APIs: ${error.message}`);
     }
   }
 }

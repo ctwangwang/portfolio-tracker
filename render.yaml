@@ -6,8 +6,6 @@ services:
     buildCommand: npm install
     startCommand: npm start
     envVars:
-      - key: ALPHA_VANTAGE_API_KEY
-        sync: false
       - key: FINNHUB_API_KEY
         sync: false
       - key: EXCHANGE_RATE_API_KEY
