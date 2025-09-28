@@ -2,7 +2,7 @@ const axios = require('axios');
 
 class StockService {
   constructor() {
-    this.alphaVantageKey = process.env.ALPHA_VANTAGE_API_KEY;
+    // Removed alphaVantageKey since we're now using Yahoo Finance for US stocks
     this.finnhubKey = process.env.FINNHUB_API_KEY;
     
     // CoinGecko symbol to ID mapping
@@ -64,6 +64,7 @@ class StockService {
     }
   }
 
+  // Existing HK stock method (unchanged)
   async getHKStockPrice(symbol) {
     try {
       let formattedSymbol = symbol;
@@ -104,6 +105,7 @@ class StockService {
     }
   }
 
+  // Existing Taiwan stock method (unchanged)
   async getTWStockPrice(symbol) {
     try {
       let formattedSymbol = symbol;
@@ -143,10 +145,14 @@ class StockService {
     }
   }
 
+  // NEW: Canada stock method
   async getCAStockPrice(symbol) {
     try {
+      // Format Canada stock symbol for Yahoo Finance
+      // Yahoo format: SHOP.TO for Toronto Stock Exchange stocks
       let formattedSymbol = symbol;
       
+      // If user enters just the symbol (e.g., "SHOP"), add .TO
       if (!symbol.includes('.TO')) {
         formattedSymbol = `${symbol}.TO`;
       }
@@ -182,88 +188,87 @@ class StockService {
     }
   }
 
-  // FIXED: Crypto with multiple API fallbacks
+  // UPDATED: Crypto method optimized for Render deployment - Binance + CryptoCompare
   async getCryptoPrice(symbol) {
     const upperSymbol = symbol.toUpperCase();
     
-    // Try CoinCap first (no rate limits, no API key needed)
-    try {
-      const response = await axios.get(
-        `https://api.coincap.io/v2/assets/${upperSymbol.toLowerCase()}`,
-        { timeout: 5000 }
-      );
-      
-      const price = parseFloat(response.data.data.priceUsd);
-      
-      if (price) {
+    // Validate if symbol is supported
+    if (!this.cryptoIdMap[upperSymbol]) {
+      throw new Error(`Crypto symbol ${symbol} not supported. Supported: ${Object.keys(this.cryptoIdMap).join(', ')}`);
+    }
+    
+    // Try APIs in order of reliability for cloud platforms
+    const apis = [
+      // API 1: Binance Public API (most reliable for cloud platforms)
+      async () => {
+        const pair = `${upperSymbol}USDT`;
+        const response = await axios.get('https://api.binance.com/api/v3/ticker/price', {
+          params: { symbol: pair },
+          timeout: 10000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+
+        const price = parseFloat(response.data.price);
+        if (!price || price === 0) {
+          throw new Error('NO_PRICE_DATA');
+        }
+
         return {
           symbol: upperSymbol,
           price: price,
-          currency: 'USD'
+          currency: 'USD',
+          source: 'Binance'
+        };
+      },
+      
+      // API 2: CryptoCompare (reliable fallback)
+      async () => {
+        const response = await axios.get('https://min-api.cryptocompare.com/data/price', {
+          params: {
+            fsym: upperSymbol,
+            tsyms: 'USD'
+          },
+          timeout: 10000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+
+        const price = response.data.USD;
+        if (!price || price === 0) {
+          throw new Error('NO_PRICE_DATA');
+        }
+
+        return {
+          symbol: upperSymbol,
+          price: parseFloat(price),
+          currency: 'USD',
+          source: 'CryptoCompare'
         };
       }
-    } catch (error) {
-      console.log(`CoinCap failed for ${upperSymbol}, trying Binance...`);
+    ];
+
+    // Try each API in sequence
+    let lastError;
+    for (let i = 0; i < apis.length; i++) {
+      try {
+        console.log(`Trying crypto API ${i + 1} for ${upperSymbol}...`);
+        const result = await apis[i]();
+        console.log(`✓ Got ${upperSymbol} price from ${result.source}: $${result.price}`);
+        return result;
+      } catch (error) {
+        lastError = error;
+        console.log(`✗ API ${i + 1} failed for ${upperSymbol}: ${error.response?.status || error.message}`);
+        
+        // Continue to next API
+        continue;
+      }
     }
 
-    // Try Binance as second option (no API key needed)
-    try {
-      const pair = `${upperSymbol}USDT`;
-      const response = await axios.get(
-        'https://api.binance.com/api/v3/ticker/price',
-        {
-          params: { symbol: pair },
-          timeout: 5000
-        }
-      );
-      
-      const price = parseFloat(response.data.price);
-      
-      return {
-        symbol: upperSymbol,
-        price: price,
-        currency: 'USD'
-      };
-    } catch (error) {
-      console.log(`Binance failed for ${upperSymbol}, trying CoinGecko...`);
-    }
-
-    // Try CoinGecko as last resort (has rate limits)
-    try {
-      const coinId = this.cryptoIdMap[upperSymbol];
-      
-      if (!coinId) {
-        throw new Error(`Crypto symbol ${symbol} not supported. Supported: ${Object.keys(this.cryptoIdMap).join(', ')}`);
-      }
-      
-      const response = await axios.get(
-        'https://api.coingecko.com/api/v3/simple/price',
-        {
-          params: {
-            ids: coinId,
-            vs_currencies: 'usd'
-          },
-          timeout: 5000
-        }
-      );
-
-      const price = response.data[coinId]?.usd;
-      
-      if (!price) {
-        throw new Error(`No price data found for ${symbol}`);
-      }
-
-      return {
-        symbol: upperSymbol,
-        price: parseFloat(price),
-        currency: 'USD'
-      };
-    } catch (error) {
-      if (error.message.includes('not supported')) {
-        throw error;
-      }
-      throw new Error(`Failed to fetch crypto price for ${symbol} from all APIs: ${error.message}`);
-    }
+    // All APIs failed
+    throw new Error(`Failed to fetch crypto price for ${symbol} from all APIs: ${lastError?.message || 'Unknown error'}`);
   }
 }
 
