@@ -51,6 +51,7 @@ function getPortfolio() {
         const saved = localStorage.getItem(STORAGE_KEY);
         return saved ? JSON.parse(saved) : [];
     } catch (error) {
+        console.error('Failed to load portfolio:', error);
         return [];
     }
 }
@@ -59,8 +60,9 @@ function getPortfolio() {
 function savePortfolio(portfolio) {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(portfolio));
+        console.log('Portfolio saved:', portfolio.length, 'holdings');
     } catch (error) {
-        // Silent fail - privacy first
+        console.error('Failed to save portfolio:', error);
     }
 }
 
@@ -116,6 +118,7 @@ addStockForm.addEventListener('submit', async (e) => {
         addStockMessage.textContent = 'Fetching price...';
         addStockMessage.className = 'message loading';
         
+        // Fetch price from API
         const response = await fetch(`${API_BASE}/price/us`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -125,6 +128,7 @@ addStockForm.addEventListener('submit', async (e) => {
         const data = await response.json();
         
         if (response.ok) {
+            // Add to localStorage
             const holding = {
                 symbol: data.symbol,
                 quantity: quantity,
@@ -484,5 +488,9 @@ refreshBtn.addEventListener('click', () => {
 
 // Load portfolio on page load
 window.addEventListener('DOMContentLoaded', () => {
+    const portfolio = getPortfolio();
+    if (portfolio.length > 0) {
+        console.log('Portfolio loaded:', portfolio.length, 'holdings');
+    }
     loadPortfolio();
 });

@@ -1,24 +1,175 @@
 const express = require('express');
 const router = express.Router();
-const portfolioController = require('../controllers/portfolioController');
+const stockService = require('../services/stockService');
+const currencyService = require('../services/currencyService');
 
-// Cash route - NEW
-router.post('/add/cash', (req, res) => portfolioController.addCash(req, res));
+// ========== Price Lookup Routes (no storage, no logging) ==========
 
-// Equity routes
-router.post('/add/us', (req, res) => portfolioController.addUSEquity(req, res));
-router.post('/add/ca', (req, res) => portfolioController.addCAEquity(req, res));
-router.post('/add/hk', (req, res) => portfolioController.addHKEquity(req, res));
-router.post('/add/tw', (req, res) => portfolioController.addTWEquity(req, res));
+// Get US stock price
+router.post('/price/us', async (req, res) => {
+    try {
+        const { symbol } = req.body;
+        
+        if (!symbol) {
+            return res.status(400).json({ error: 'Symbol is required' });
+        }
+        
+        const stockData = await stockService.getUSStockPrice(symbol);
+        
+        res.json({
+            symbol: stockData.symbol,
+            price: stockData.price,
+            currency: stockData.currency
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-// Crypto route
-router.post('/add/crypto', (req, res) => portfolioController.addCrypto(req, res));
+// Get Canada stock price
+router.post('/price/ca', async (req, res) => {
+    try {
+        const { symbol } = req.body;
+        
+        if (!symbol) {
+            return res.status(400).json({ error: 'Symbol is required' });
+        }
+        
+        const stockData = await stockService.getCAStockPrice(symbol);
+        
+        res.json({
+            symbol: stockData.symbol,
+            price: stockData.price,
+            currency: stockData.currency
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-// Portfolio management
-router.get('/value', (req, res) => portfolioController.getPortfolioValue(req, res));
-router.delete('/clear', (req, res) => portfolioController.clearPortfolio(req, res));
+// Get HK stock price
+router.post('/price/hk', async (req, res) => {
+    try {
+        const { symbol } = req.body;
+        
+        if (!symbol) {
+            return res.status(400).json({ error: 'Symbol is required' });
+        }
+        
+        const stockData = await stockService.getHKStockPrice(symbol);
+        
+        res.json({
+            symbol: stockData.symbol,
+            price: stockData.price,
+            currency: stockData.currency
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-// NEW: Remove individual holding
-router.delete('/remove/:index', (req, res) => portfolioController.removeHolding(req, res));
+// Get Taiwan stock price
+router.post('/price/tw', async (req, res) => {
+    try {
+        const { symbol } = req.body;
+        
+        if (!symbol) {
+            return res.status(400).json({ error: 'Symbol is required' });
+        }
+        
+        const stockData = await stockService.getTWStockPrice(symbol);
+        
+        res.json({
+            symbol: stockData.symbol,
+            price: stockData.price,
+            currency: stockData.currency
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get crypto price
+router.post('/price/crypto', async (req, res) => {
+    try {
+        const { symbol } = req.body;
+        
+        if (!symbol) {
+            return res.status(400).json({ error: 'Symbol is required' });
+        }
+        
+        const cryptoData = await stockService.getCryptoPrice(symbol);
+        
+        res.json({
+            symbol: cryptoData.symbol,
+            price: cryptoData.price,
+            currency: cryptoData.currency
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ========== Portfolio Calculation Route ==========
+
+// Calculate total portfolio value with currency conversions
+// Note: No logging of portfolio contents for privacy
+router.post('/calculate', async (req, res) => {
+    try {
+        const { holdings } = req.body;
+        
+        if (!holdings || !Array.isArray(holdings)) {
+            return res.status(400).json({ error: 'Holdings array is required' });
+        }
+        
+        if (holdings.length === 0) {
+            return res.json({ 
+                totalUSD: 0,
+                conversions: {}
+            });
+        }
+        
+        // Calculate total in USD
+        let totalUSD = 0;
+        
+        for (const holding of holdings) {
+            // For cash holdings, the value is already the amount in that currency
+            if (holding.market === 'CASH') {
+                if (holding.currency === 'USD') {
+                    totalUSD += holding.value;
+                } else {
+                    const usdValue = await currencyService.convertCurrency(
+                        holding.value, 
+                        holding.currency, 
+                        'USD'
+                    );
+                    totalUSD += usdValue;
+                }
+            } else {
+                // For stocks/crypto
+                if (holding.currency === 'USD') {
+                    totalUSD += holding.value;
+                } else {
+                    const usdValue = await currencyService.convertCurrency(
+                        holding.value, 
+                        holding.currency, 
+                        'USD'
+                    );
+                    totalUSD += usdValue;
+                }
+            }
+        }
+        
+        // Convert to multiple currencies
+        const conversions = await currencyService.getMultipleCurrencies(totalUSD, 'USD');
+        
+        res.json({
+            totalUSD,
+            conversions
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 module.exports = router;
