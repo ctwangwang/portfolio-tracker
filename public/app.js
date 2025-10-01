@@ -64,11 +64,44 @@ function savePortfolio(portfolio) {
     }
 }
 
-// Add holding to portfolio
+// NEW: Add holding with auto-merge logic
 function addHolding(holding) {
     const portfolio = getPortfolio();
-    portfolio.push(holding);
-    savePortfolio(portfolio);
+    
+    // Check if this asset already exists
+    const existingIndex = portfolio.findIndex(h => 
+        h.symbol === holding.symbol && 
+        h.market === holding.market
+    );
+    
+    if (existingIndex !== -1) {
+        // Asset exists - merge quantities
+        const existing = portfolio[existingIndex];
+        
+        if (holding.market === 'CASH') {
+            // For cash, add the amounts
+            existing.value += holding.value;
+            existing.price = existing.value; // Keep price = value for cash
+        } else {
+            // For stocks/crypto, add quantities and recalculate
+            existing.quantity += holding.quantity;
+            existing.price = holding.price; // Update to latest price
+            existing.value = existing.quantity * existing.price;
+        }
+        
+        existing.addedAt = new Date().toISOString(); // Update timestamp
+        
+        portfolio[existingIndex] = existing;
+        savePortfolio(portfolio);
+        
+        return { merged: true, holding: existing };
+    } else {
+        // New asset - add to portfolio
+        portfolio.push(holding);
+        savePortfolio(portfolio);
+        
+        return { merged: false, holding };
+    }
 }
 
 // Remove holding from portfolio
@@ -135,9 +168,14 @@ addStockForm.addEventListener('submit', async (e) => {
                 addedAt: new Date().toISOString()
             };
             
-            addHolding(holding);
+            const result = addHolding(holding);
             
-            showMessage(addStockMessage, `✓ Added ${quantity} shares of ${symbol}!`, 'success');
+            if (result.merged) {
+                showMessage(addStockMessage, `✓ Merged! Now you have ${result.holding.quantity} shares of ${symbol}`, 'success');
+            } else {
+                showMessage(addStockMessage, `✓ Added ${quantity} shares of ${symbol}!`, 'success');
+            }
+            
             symbolInput.value = '';
             quantityInput.value = '';
             loadPortfolio();
@@ -179,9 +217,14 @@ addCAStockForm.addEventListener('submit', async (e) => {
                 addedAt: new Date().toISOString()
             };
             
-            addHolding(holding);
+            const result = addHolding(holding);
             
-            showMessage(addCAStockMessage, `✓ Added ${quantity} shares of ${symbol} (CA)!`, 'success');
+            if (result.merged) {
+                showMessage(addCAStockMessage, `✓ Merged! Now you have ${result.holding.quantity} shares of ${symbol} (CA)`, 'success');
+            } else {
+                showMessage(addCAStockMessage, `✓ Added ${quantity} shares of ${symbol} (CA)!`, 'success');
+            }
+            
             caSymbolInput.value = '';
             caQuantityInput.value = '';
             loadPortfolio();
@@ -223,9 +266,14 @@ addHKStockForm.addEventListener('submit', async (e) => {
                 addedAt: new Date().toISOString()
             };
             
-            addHolding(holding);
+            const result = addHolding(holding);
             
-            showMessage(addHKStockMessage, `✓ Added ${quantity} shares of ${symbol} (HK)!`, 'success');
+            if (result.merged) {
+                showMessage(addHKStockMessage, `✓ Merged! Now you have ${result.holding.quantity} shares of ${symbol} (HK)`, 'success');
+            } else {
+                showMessage(addHKStockMessage, `✓ Added ${quantity} shares of ${symbol} (HK)!`, 'success');
+            }
+            
             hkSymbolInput.value = '';
             hkQuantityInput.value = '';
             loadPortfolio();
@@ -267,9 +315,14 @@ addTWStockForm.addEventListener('submit', async (e) => {
                 addedAt: new Date().toISOString()
             };
             
-            addHolding(holding);
+            const result = addHolding(holding);
             
-            showMessage(addTWStockMessage, `✓ Added ${quantity} shares of ${symbol} (TW)!`, 'success');
+            if (result.merged) {
+                showMessage(addTWStockMessage, `✓ Merged! Now you have ${result.holding.quantity} shares of ${symbol} (TW)`, 'success');
+            } else {
+                showMessage(addTWStockMessage, `✓ Added ${quantity} shares of ${symbol} (TW)!`, 'success');
+            }
+            
             twSymbolInput.value = '';
             twQuantityInput.value = '';
             loadPortfolio();
@@ -299,9 +352,14 @@ addCashForm.addEventListener('submit', async (e) => {
             addedAt: new Date().toISOString()
         };
         
-        addHolding(holding);
+        const result = addHolding(holding);
         
-        showMessage(addCashMessage, `✓ Added ${formatCurrency(amount, currency)}!`, 'success');
+        if (result.merged) {
+            showMessage(addCashMessage, `✓ Merged! Total ${currency.toUpperCase()} cash: ${formatCurrency(result.holding.value, currency)}`, 'success');
+        } else {
+            showMessage(addCashMessage, `✓ Added ${formatCurrency(amount, currency)}!`, 'success');
+        }
+        
         cashCurrencyInput.value = '';
         cashAmountInput.value = '';
         loadPortfolio();
@@ -340,9 +398,14 @@ addCryptoForm.addEventListener('submit', async (e) => {
                 addedAt: new Date().toISOString()
             };
             
-            addHolding(holding);
+            const result = addHolding(holding);
             
-            showMessage(addCryptoMessage, `✓ Added ${quantity} ${symbol}!`, 'success');
+            if (result.merged) {
+                showMessage(addCryptoMessage, `✓ Merged! Now you have ${result.holding.quantity} ${symbol}`, 'success');
+            } else {
+                showMessage(addCryptoMessage, `✓ Added ${quantity} ${symbol}!`, 'success');
+            }
+            
             cryptoSymbolInput.value = '';
             cryptoQuantityInput.value = '';
             loadPortfolio();

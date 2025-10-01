@@ -10,7 +10,7 @@
     <div class="container">
         <header>
             <h1>📊 Portfolio Tracker</h1>
-            <p>Track your US, Canada, HK, Taiwan equities, Cash and Crypto in 11 currencies</p>
+            <p>Track your US, Canada, HK, Taiwan equities, Cash and Crypto in 10 currencies</p>
         </header>
 
         <!-- Add US Stock Form -->
@@ -81,7 +81,7 @@
             <div id="addTWStockMessage" class="message"></div>
         </div>
 
-        <!-- NEW: Add Cash Form -->
+        <!-- Add Cash Form -->
         <div class="card">
             <h2>💵 Add Cash</h2>
             <form id="addCashForm">
@@ -111,15 +111,18 @@
             <div id="addCashMessage" class="message"></div>
         </div>
 
-        <!-- Add Crypto Form -->
+        <!-- Add Crypto Form - UPDATED: No limitation message -->
         <div class="card">
             <h2>₿ Add Cryptocurrency</h2>
             <form id="addCryptoForm">
                 <div class="form-group">
                     <label for="cryptoSymbol">Crypto Symbol:</label>
-                    <input type="text" id="cryptoSymbol" placeholder="e.g., BTC, ETH, SOL" required>
+                    <input type="text" id="cryptoSymbol" placeholder="e.g., BTC, ETH, SOL, DOGE, SHIB" required>
                     <small style="color: #718096; margin-top: 4px; display: block;">
-                        Supported: BTC, ETH, USDT, BNB, SOL, ADA, XRP, DOT, DOGE, MATIC, AVAX, LINK, UNI, ATOM, LTC, BCH, ALGO, TRX, SHIB
+                        ✨ Supports thousands of cryptocurrencies via CryptoCompare API
+                    </small>
+                    <small style="color: #718096; margin-top: 2px; display: block;">
+                        Popular: BTC, ETH, USDT, BNB, SOL, XRP, ADA, DOGE, DOT, MATIC, AVAX, LINK, UNI, LTC, and many more!
                     </small>
                 </div>
                 <div class="form-group">

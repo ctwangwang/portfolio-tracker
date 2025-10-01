@@ -3,29 +3,6 @@ const axios = require('axios');
 class StockService {
   constructor() {
     this.finnhubKey = process.env.FINNHUB_API_KEY;
-    
-    // CoinGecko symbol to ID mapping
-    this.cryptoIdMap = {
-      'BTC': 'bitcoin',
-      'ETH': 'ethereum',
-      'USDT': 'tether',
-      'BNB': 'binancecoin',
-      'SOL': 'solana',
-      'ADA': 'cardano',
-      'XRP': 'ripple',
-      'DOT': 'polkadot',
-      'DOGE': 'dogecoin',
-      'MATIC': 'matic-network',
-      'AVAX': 'avalanche-2',
-      'LINK': 'chainlink',
-      'UNI': 'uniswap',
-      'ATOM': 'cosmos',
-      'LTC': 'litecoin',
-      'BCH': 'bitcoin-cash',
-      'ALGO': 'algorand',
-      'TRX': 'tron',
-      'SHIB': 'shiba-inu'
-    };
   }
 
   // US stock method using Yahoo Finance API
@@ -184,83 +161,48 @@ class StockService {
     }
   }
 
-  // Crypto method - Privacy protected (no symbol/price logging)
+  // NEW: CryptoCompare Only - Supports ALL cryptocurrencies
   async getCryptoPrice(symbol) {
     const upperSymbol = symbol.toUpperCase();
     
-    // Validate if symbol is supported
-    if (!this.cryptoIdMap[upperSymbol]) {
-      throw new Error(`Crypto symbol ${symbol} not supported. Supported: ${Object.keys(this.cryptoIdMap).join(', ')}`);
-    }
-    
-    // Try APIs in order of reliability for cloud platforms
-    const apis = [
-      // API 1: Binance Public API
-      async () => {
-        const pair = `${upperSymbol}USDT`;
-        const response = await axios.get('https://api.binance.com/api/v3/ticker/price', {
-          params: { symbol: pair },
-          timeout: 10000,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
-        });
-
-        const price = parseFloat(response.data.price);
-        if (!price || price === 0) {
-          throw new Error('NO_PRICE_DATA');
+    try {
+      // CryptoCompare API supports thousands of cryptos automatically
+      const response = await axios.get('https://min-api.cryptocompare.com/data/price', {
+        params: {
+          fsym: upperSymbol,  // From symbol (e.g., BTC, ETH, DOGE, SHIB, etc.)
+          tsyms: 'USD'        // To symbol (always USD)
+        },
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
+      });
 
-        return {
-          symbol: upperSymbol,
-          price: price,
-          currency: 'USD',
-          source: 'Binance'
-        };
-      },
+      // Check if price exists
+      const price = response.data.USD;
       
-      // API 2: CryptoCompare
-      async () => {
-        const response = await axios.get('https://min-api.cryptocompare.com/data/price', {
-          params: {
-            fsym: upperSymbol,
-            tsyms: 'USD'
-          },
-          timeout: 10000,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
-        });
-
-        const price = response.data.USD;
-        if (!price || price === 0) {
-          throw new Error('NO_PRICE_DATA');
-        }
-
-        return {
-          symbol: upperSymbol,
-          price: parseFloat(price),
-          currency: 'USD',
-          source: 'CryptoCompare'
-        };
+      if (!price || price === 0) {
+        throw new Error(`Cryptocurrency ${symbol} not found or not supported by CryptoCompare`);
       }
-    ];
 
-    // Try each API in sequence
-    let lastError;
-    for (let i = 0; i < apis.length; i++) {
-      try {
-        const result = await apis[i]();
-        return result;
-      } catch (error) {
-        lastError = error;
-        // Continue to next API
-        continue;
+      return {
+        symbol: upperSymbol,
+        price: parseFloat(price),
+        currency: 'USD'
+      };
+      
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error(`Cryptocurrency ${symbol} not found. Please verify the symbol.`);
       }
+      
+      // Check if it's a "market does not exist" error from CryptoCompare
+      if (error.response?.data?.Message) {
+        throw new Error(`${symbol}: ${error.response.data.Message}`);
+      }
+      
+      throw new Error(`Failed to fetch crypto price for ${symbol}: ${error.message}`);
     }
-
-    // All APIs failed
-    throw new Error(`Failed to fetch crypto price from all APIs: ${lastError?.message || 'Unknown error'}`);
   }
 }
 
