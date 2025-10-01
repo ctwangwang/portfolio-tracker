@@ -284,6 +284,7 @@ async function loadPortfolio() {
                             <th>Price</th>
                             <th>Value</th>
                             <th>Market</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -299,6 +300,7 @@ async function loadPortfolio() {
                             <td>-</td>
                             <td>${formatCurrency(holding.value, holding.currency)}</td>
                             <td>${holding.market}</td>
+                            <td><button class="btn-remove" onclick="removeHolding(${data.holdings.indexOf(holding)})">🗑️</button></td>
                         </tr>
                     `;
                 } else {
@@ -309,6 +311,7 @@ async function loadPortfolio() {
                             <td>${formatCurrency(holding.price, holding.currency)}</td>
                             <td>${formatCurrency(holding.value, holding.currency)}</td>
                             <td>${holding.market}</td>
+                            <td><button class="btn-remove" onclick="removeHolding(${data.holdings.indexOf(holding)})">🗑️</button></td>
                         </tr>
                     `;
                 }
@@ -317,8 +320,8 @@ async function loadPortfolio() {
             holdingsHTML += '</tbody></table>';
             holdingsContainer.innerHTML = holdingsHTML;
             
-            // UPDATED: Display all 11 currencies - USD, CAD, HKD, TWD, CNY, JPY, EUR, GBP, KRW, AUD, SGD
-            const currencies = ['USD', 'CAD', 'HKD', 'TWD', 'CNY', 'JPY', 'EUR', 'GBP', 'KRW', 'AUD', 'SGD'];
+            // UPDATED: Display all 10 currencies (removed SGD)
+            const currencies = ['USD', 'CAD', 'HKD', 'TWD', 'CNY', 'JPY', 'EUR', 'GBP', 'KRW', 'AUD'];
             let totalHTML = '<div class="currency-grid">';
             
             currencies.forEach(currency => {
@@ -370,3 +373,27 @@ refreshBtn.addEventListener('click', loadPortfolio);
 
 // Load portfolio on page load
 loadPortfolio();
+
+// NEW: Remove individual holding
+async function removeHolding(index) {
+    if (!confirm('Are you sure you want to remove this holding?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/remove/${index}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage(addStockMessage, 'Holding removed successfully!', 'success');
+            loadPortfolio();
+        } else {
+            showMessage(addStockMessage, `Error: ${data.error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(addStockMessage, `Error: ${error.message}`, 'error');
+    }
+}

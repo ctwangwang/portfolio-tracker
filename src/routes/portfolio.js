@@ -18,4 +18,7 @@ router.post('/add/crypto', (req, res) => portfolioController.addCrypto(req, res)
 router.get('/value', (req, res) => portfolioController.getPortfolioValue(req, res));
 router.delete('/clear', (req, res) => portfolioController.clearPortfolio(req, res));
 
+// NEW: Remove individual holding
+router.delete('/remove/:index', (req, res) => portfolioController.removeHolding(req, res));
+
 module.exports = router;

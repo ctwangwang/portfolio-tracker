@@ -23,8 +23,8 @@ class CurrencyService {
   }
 
   async getMultipleCurrencies(amount, fromCurrency) {
-    // UPDATED: Add KRW, AUD, SGD to the currencies list (total 11 currencies)
-    const currencies = ['USD', 'CAD', 'HKD', 'TWD', 'CNY', 'JPY', 'EUR', 'GBP', 'KRW', 'AUD', 'SGD'];
+    // UPDATED: 10 currencies (removed SGD)
+    const currencies = ['USD', 'CAD', 'HKD', 'TWD', 'CNY', 'JPY', 'EUR', 'GBP', 'KRW', 'AUD'];
     const results = {};
 
     for (const currency of currencies) {

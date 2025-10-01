@@ -15,8 +15,8 @@ class PortfolioController {
         return res.status(400).json({ error: 'Currency and amount are required' });
       }
 
-      // Validate currency
-      const validCurrencies = ['USD', 'CAD', 'HKD', 'TWD', 'CNY', 'EUR', 'GBP', 'JPY', 'KRW', 'AUD', 'SGD'];
+      // Validate currency (removed SGD)
+      const validCurrencies = ['USD', 'CAD', 'HKD', 'TWD', 'CNY', 'EUR', 'GBP', 'JPY', 'KRW', 'AUD'];
       if (!validCurrencies.includes(currency.toUpperCase())) {
         return res.status(400).json({ 
           error: `Invalid currency. Supported: ${validCurrencies.join(', ')}` 
@@ -253,6 +253,28 @@ class PortfolioController {
   clearPortfolio(req, res) {
     this.portfolio = [];
     res.json({ success: true, message: 'Portfolio cleared' });
+  }
+
+  // NEW: Remove individual holding
+  removeHolding(req, res) {
+    try {
+      const { index } = req.params;
+      const idx = parseInt(index);
+
+      if (isNaN(idx) || idx < 0 || idx >= this.portfolio.length) {
+        return res.status(400).json({ error: 'Invalid holding index' });
+      }
+
+      const removed = this.portfolio.splice(idx, 1)[0];
+
+      res.json({
+        success: true,
+        removed,
+        portfolio: this.portfolio
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   }
 }
 
