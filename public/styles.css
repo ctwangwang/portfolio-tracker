@@ -63,7 +63,8 @@ header p {
     font-weight: 500;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
     width: 100%;
     padding: 12px;
     border: 2px solid #e0e0e0;
@@ -72,7 +73,8 @@ header p {
     transition: border-color 0.3s;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
     outline: none;
     border-color: #667eea;
 }
@@ -135,6 +137,12 @@ header p {
     display: block;
 }
 
+.message.loading {
+    background: #bee3f8;
+    color: #2c5282;
+    display: block;
+}
+
 .holdings-table {
     width: 100%;
     border-collapse: collapse;
@@ -158,9 +166,10 @@ header p {
     background: #f7fafc;
 }
 
+/* UPDATED: Currency grid for 11 currencies */
 .currency-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 16px;
     margin-top: 16px;
 }
@@ -170,16 +179,23 @@ header p {
     padding: 16px;
     border-radius: 8px;
     text-align: center;
+    transition: transform 0.2s;
+}
+
+.currency-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .currency-item .currency-code {
     font-size: 14px;
     color: #718096;
     margin-bottom: 4px;
+    font-weight: 600;
 }
 
 .currency-item .currency-value {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
     color: #2d3748;
 }
@@ -196,6 +212,7 @@ header p {
     padding: 20px;
 }
 
+/* Responsive design */
 @media (max-width: 768px) {
     header h1 {
         font-size: 2rem;
@@ -208,10 +225,27 @@ header p {
     .currency-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+    
+    .currency-item .currency-value {
+        font-size: 18px;
+    }
 }
 
-@media (max-width: 1024px) and (min-width: 769px) {
+@media (min-width: 769px) and (max-width: 1024px) {
+    .currency-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1025px) {
     .currency-grid {
         grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Larger screens can show more columns */
+@media (min-width: 1400px) {
+    .currency-grid {
+        grid-template-columns: repeat(5, 1fr);
     }
 }

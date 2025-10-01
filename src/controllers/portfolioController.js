@@ -6,7 +6,44 @@ class PortfolioController {
     this.portfolio = [];
   }
 
-  // Existing methods (unchanged)
+  // NEW: Add cash method
+  async addCash(req, res) {
+    try {
+      const { currency, amount } = req.body;
+
+      if (!currency || !amount) {
+        return res.status(400).json({ error: 'Currency and amount are required' });
+      }
+
+      // Validate currency
+      const validCurrencies = ['USD', 'CAD', 'HKD', 'TWD', 'CNY', 'EUR', 'GBP', 'JPY', 'KRW', 'AUD', 'SGD'];
+      if (!validCurrencies.includes(currency.toUpperCase())) {
+        return res.status(400).json({ 
+          error: `Invalid currency. Supported: ${validCurrencies.join(', ')}` 
+        });
+      }
+
+      const holding = {
+        symbol: currency.toUpperCase(),
+        quantity: 1, // For cash, quantity is always 1
+        price: parseFloat(amount),
+        currency: currency.toUpperCase(),
+        value: parseFloat(amount),
+        market: 'CASH'
+      };
+
+      this.portfolio.push(holding);
+
+      res.json({
+        success: true,
+        holding,
+        portfolio: this.portfolio
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   async addUSEquity(req, res) {
     try {
       const { symbol, quantity } = req.body;
@@ -100,7 +137,6 @@ class PortfolioController {
     }
   }
 
-  // NEW: Add Canada equity method
   async addCAEquity(req, res) {
     try {
       const { symbol, quantity } = req.body;
@@ -163,7 +199,7 @@ class PortfolioController {
     }
   }
 
-  // UPDATED: Handle multiple currencies including CAD
+  // UPDATED: Handle all currencies including cash currencies
   async getPortfolioValue(req, res) {
     try {
       if (this.portfolio.length === 0) {
@@ -174,17 +210,28 @@ class PortfolioController {
       let totalUSD = 0;
       
       for (const holding of this.portfolio) {
-        if (holding.currency === 'USD') {
-          totalUSD += holding.value;
-        } else if (holding.currency === 'HKD') {
-          const usdValue = await currencyService.convertCurrency(holding.value, 'HKD', 'USD');
-          totalUSD += usdValue;
-        } else if (holding.currency === 'TWD') {
-          const usdValue = await currencyService.convertCurrency(holding.value, 'TWD', 'USD');
-          totalUSD += usdValue;
-        } else if (holding.currency === 'CAD') {
-          const usdValue = await currencyService.convertCurrency(holding.value, 'CAD', 'USD');
-          totalUSD += usdValue;
+        // For cash holdings, the value is already the amount in that currency
+        if (holding.market === 'CASH') {
+          if (holding.currency === 'USD') {
+            totalUSD += holding.value;
+          } else {
+            const usdValue = await currencyService.convertCurrency(holding.value, holding.currency, 'USD');
+            totalUSD += usdValue;
+          }
+        } else {
+          // For stocks/crypto
+          if (holding.currency === 'USD') {
+            totalUSD += holding.value;
+          } else if (holding.currency === 'HKD') {
+            const usdValue = await currencyService.convertCurrency(holding.value, 'HKD', 'USD');
+            totalUSD += usdValue;
+          } else if (holding.currency === 'TWD') {
+            const usdValue = await currencyService.convertCurrency(holding.value, 'TWD', 'USD');
+            totalUSD += usdValue;
+          } else if (holding.currency === 'CAD') {
+            const usdValue = await currencyService.convertCurrency(holding.value, 'CAD', 'USD');
+            totalUSD += usdValue;
+          }
         }
       }
 

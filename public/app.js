@@ -24,6 +24,12 @@ const twSymbolInput = document.getElementById('twSymbol');
 const twQuantityInput = document.getElementById('twQuantity');
 const addTWStockMessage = document.getElementById('addTWStockMessage');
 
+// NEW: Cash DOM Elements
+const addCashForm = document.getElementById('addCashForm');
+const cashCurrencyInput = document.getElementById('cashCurrency');
+const cashAmountInput = document.getElementById('cashAmount');
+const addCashMessage = document.getElementById('addCashMessage');
+
 // Crypto DOM Elements
 const addCryptoForm = document.getElementById('addCryptoForm');
 const cryptoSymbolInput = document.getElementById('cryptoSymbol');
@@ -190,6 +196,40 @@ addTWStockForm.addEventListener('submit', async (e) => {
     }
 });
 
+// NEW: Add Cash
+addCashForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const currency = cashCurrencyInput.value;
+    const amount = parseFloat(cashAmountInput.value);
+    
+    try {
+        addCashMessage.textContent = 'Adding cash...';
+        addCashMessage.className = 'message loading';
+        
+        const response = await fetch(`${API_BASE}/add/cash`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ currency, amount })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage(addCashMessage, `Successfully added ${formatCurrency(amount, currency)}!`, 'success');
+            cashCurrencyInput.value = '';
+            cashAmountInput.value = '';
+            loadPortfolio();
+        } else {
+            showMessage(addCashMessage, `Error: ${data.error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(addCashMessage, `Error: ${error.message}`, 'error');
+    }
+});
+
 // Add Crypto
 addCryptoForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -250,22 +290,35 @@ async function loadPortfolio() {
             `;
             
             data.holdings.forEach(holding => {
-                holdingsHTML += `
-                    <tr>
-                        <td><strong>${holding.symbol}</strong></td>
-                        <td>${holding.quantity}</td>
-                        <td>${formatCurrency(holding.price, holding.currency)}</td>
-                        <td>${formatCurrency(holding.value, holding.currency)}</td>
-                        <td>${holding.market}</td>
-                    </tr>
-                `;
+                // UPDATED: Handle cash holdings differently
+                if (holding.market === 'CASH') {
+                    holdingsHTML += `
+                        <tr>
+                            <td><strong>${holding.symbol} (Cash)</strong></td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>${formatCurrency(holding.value, holding.currency)}</td>
+                            <td>${holding.market}</td>
+                        </tr>
+                    `;
+                } else {
+                    holdingsHTML += `
+                        <tr>
+                            <td><strong>${holding.symbol}</strong></td>
+                            <td>${holding.quantity}</td>
+                            <td>${formatCurrency(holding.price, holding.currency)}</td>
+                            <td>${formatCurrency(holding.value, holding.currency)}</td>
+                            <td>${holding.market}</td>
+                        </tr>
+                    `;
+                }
             });
             
             holdingsHTML += '</tbody></table>';
             holdingsContainer.innerHTML = holdingsHTML;
             
-            // UPDATED: Reordered currencies - USD, CAD, HKD, TWD, CNY, JPY, EUR, GBP
-            const currencies = ['USD', 'CAD', 'HKD', 'TWD', 'CNY', 'JPY', 'EUR', 'GBP'];
+            // UPDATED: Display all 11 currencies - USD, CAD, HKD, TWD, CNY, JPY, EUR, GBP, KRW, AUD, SGD
+            const currencies = ['USD', 'CAD', 'HKD', 'TWD', 'CNY', 'JPY', 'EUR', 'GBP', 'KRW', 'AUD', 'SGD'];
             let totalHTML = '<div class="currency-grid">';
             
             currencies.forEach(currency => {
