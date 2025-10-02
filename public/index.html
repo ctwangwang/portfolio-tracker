@@ -134,6 +134,34 @@
             <div id="addCryptoMessage" class="message"></div>
         </div>
 
+        <!-- Add Metals Form -->
+        <div class="card">
+            <h2>🥇 Add Precious Metals</h2>
+            <form id="addMetalForm">
+                <div class="form-group">
+                    <label for="metalType">Metal Type:</label>
+                    <select id="metalType" required>
+                        <option value="">Select Metal</option>
+                        <option value="GC=F">Gold (XAU)</option>
+                        <option value="SI=F">Silver (XAG)</option>
+                        <option value="PL=F">Platinum (XPT)</option>
+                        <option value="PA=F">Palladium (XPD)</option>
+                    </select>
+                    <small style="color: #718096; margin-top: 4px; display: block;">
+                        Prices are per troy ounce in USD
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label for="metalWeight">Weight (in grams):</label>
+                    <input type="number" id="metalWeight" min="0" step="0.01" placeholder="e.g., 31.1 (1 troy oz)" required>
+                    <small style="color: #718096; margin-top: 4px; display: block;">
+                        1 troy ounce = 31.1035 grams
+                    </small>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Metal</button>
+            </form>
+            <div id="addMetalMessage" class="message"></div>
+        </div>
         <!-- Portfolio Holdings -->
         <div class="card">
             <div class="card-header">

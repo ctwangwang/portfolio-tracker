@@ -204,6 +204,71 @@ class StockService {
       throw new Error(`Failed to fetch crypto price for ${symbol}: ${error.message}`);
     }
   }
+  // Add this method to src/services/stockService.js after the getCryptoPrice method
+
+  // Get precious metal price
+  async getMetalPrice(symbol, weightGrams) {
+    try {
+      // Yahoo Finance symbols for precious metals futures
+      // GC=F (Gold), SI=F (Silver), PL=F (Platinum), PA=F (Palladium)
+      
+      const metalNames = {
+        'GC=F': 'Gold',
+        'SI=F': 'Silver',
+        'PL=F': 'Platinum',
+        'PA=F': 'Palladium'
+      };
+      
+      if (!metalNames[symbol]) {
+        throw new Error(`Unsupported metal symbol: ${symbol}. Supported: ${Object.keys(metalNames).join(', ')}`);
+      }
+      
+      const response = await axios.get(
+        `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`,
+        {
+          params: {
+            interval: '1d',
+            range: '1d'
+          },
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        }
+      );
+
+      const result = response.data.chart.result[0];
+      
+      if (!result || !result.meta || !result.meta.regularMarketPrice) {
+        throw new Error(`No data found for metal: ${symbol}`);
+      }
+
+      // Price from Yahoo is per troy ounce in USD
+      const pricePerOunce = parseFloat(result.meta.regularMarketPrice);
+      
+      // Convert grams to troy ounces (1 troy oz = 31.1035 grams)
+      const GRAMS_PER_TROY_OUNCE = 31.1035;
+      const ounces = weightGrams / GRAMS_PER_TROY_OUNCE;
+      
+      // Calculate total value
+      const totalValue = pricePerOunce * ounces;
+      
+      return {
+        symbol: metalNames[symbol],
+        metalType: symbol,
+        pricePerOunce: pricePerOunce,
+        weightGrams: weightGrams,
+        ounces: ounces,
+        totalValue: totalValue,
+        currency: 'USD'
+      };
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error(`Metal symbol ${symbol} not found. Please check the symbol.`);
+      }
+      throw new Error(`Failed to fetch metal price for ${symbol}: ${error.message}`);
+    }
+  }
 }
+
 
 module.exports = new StockService();

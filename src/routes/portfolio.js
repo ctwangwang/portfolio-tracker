@@ -110,6 +110,30 @@ router.post('/price/crypto', async (req, res) => {
     }
 });
 
+// Add this route to src/routes/portfolio.js after the crypto price route
+
+// Get metal price
+router.post('/price/metal', async (req, res) => {
+    try {
+        const { symbol, weightGrams } = req.body;
+        
+        if (!symbol || !weightGrams) {
+            return res.status(400).json({ error: 'Symbol and weightGrams are required' });
+        }
+        
+        const metalData = await stockService.getMetalPrice(symbol, weightGrams);
+        
+        res.json({
+            symbol: metalData.symbol,
+            pricePerOunce: metalData.pricePerOunce,
+            weightGrams: metalData.weightGrams,
+            totalValue: metalData.totalValue,
+            currency: metalData.currency
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 // ========== Portfolio Calculation Route ==========
 
 // Calculate total portfolio value with currency conversions
@@ -145,8 +169,14 @@ router.post('/calculate', async (req, res) => {
                     );
                     totalUSD += usdValue;
                 }
-            } else {
-                // For stocks/crypto
+            } 
+            // For metal holdings
+            else if (holding.market === 'METAL') {
+                // Metals are always priced in USD
+                totalUSD += holding.value;
+            }
+            // For stocks/crypto
+            else {
                 if (holding.currency === 'USD') {
                     totalUSD += holding.value;
                 } else {

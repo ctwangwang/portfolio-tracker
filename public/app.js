@@ -36,6 +36,12 @@ const cryptoSymbolInput = document.getElementById('cryptoSymbol');
 const cryptoQuantityInput = document.getElementById('cryptoQuantity');
 const addCryptoMessage = document.getElementById('addCryptoMessage');
 
+// Metal DOM Elements
+const addMetalForm = document.getElementById('addMetalForm');
+const metalTypeInput = document.getElementById('metalType');
+const metalWeightInput = document.getElementById('metalWeight');
+const addMetalMessage = document.getElementById('addMetalMessage');
+
 // Common elements
 const holdingsContainer = document.getElementById('holdingsContainer');
 const totalValueContainer = document.getElementById('totalValueContainer');
@@ -69,10 +75,13 @@ function addHolding(holding) {
     const portfolio = getPortfolio();
     
     // Check if this asset already exists
-    const existingIndex = portfolio.findIndex(h => 
-        h.symbol === holding.symbol && 
-        h.market === holding.market
-    );
+    // For metals, match by both symbol AND metalType
+    const existingIndex = portfolio.findIndex(h => {
+        if (holding.market === 'METAL' && h.market === 'METAL') {
+            return h.symbol === holding.symbol && h.metalType === holding.metalType;
+        }
+        return h.symbol === holding.symbol && h.market === holding.market;
+    });
     
     if (existingIndex !== -1) {
         // Asset exists - merge quantities
@@ -81,15 +90,21 @@ function addHolding(holding) {
         if (holding.market === 'CASH') {
             // For cash, add the amounts
             existing.value += holding.value;
-            existing.price = existing.value; // Keep price = value for cash
+            existing.price = existing.value;
+        } else if (holding.market === 'METAL') {
+            // For metals, add weight in grams
+            existing.weightGrams += holding.weightGrams;
+            existing.quantity = existing.weightGrams;
+            existing.price = holding.price; // Update to latest price per oz
+            existing.value = existing.weightGrams * (holding.price / 31.1035); // Recalculate value
         } else {
             // For stocks/crypto, add quantities and recalculate
             existing.quantity += holding.quantity;
-            existing.price = holding.price; // Update to latest price
+            existing.price = holding.price;
             existing.value = existing.quantity * existing.price;
         }
         
-        existing.addedAt = new Date().toISOString(); // Update timestamp
+        existing.addedAt = new Date().toISOString();
         
         portfolio[existingIndex] = existing;
         savePortfolio(portfolio);
@@ -417,6 +432,66 @@ addCryptoForm.addEventListener('submit', async (e) => {
     }
 });
 
+// Metal names mapping
+const metalNames = {
+    'GC=F': 'Gold',
+    'SI=F': 'Silver',
+    'PL=F': 'Platinum',
+    'PA=F': 'Palladium'
+};
+
+// Add Metal Form Handler
+addMetalForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const metalType = metalTypeInput.value;
+    const weightGrams = parseFloat(metalWeightInput.value);
+    
+    try {
+        addMetalMessage.textContent = 'Fetching metal price...';
+        addMetalMessage.className = 'message loading';
+        
+        const response = await fetch(`${API_BASE}/price/metal`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ symbol: metalType, weightGrams })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            const metalName = metalNames[metalType] || metalType;
+            
+            const holding = {
+                symbol: metalName,
+                quantity: weightGrams,
+                price: data.pricePerOunce,
+                currency: data.currency,
+                value: data.totalValue,
+                market: 'METAL',
+                metalType: metalType,
+                weightGrams: weightGrams,
+                addedAt: new Date().toISOString()
+            };
+            
+            const result = addHolding(holding);
+            
+            if (result.merged) {
+                showMessage(addMetalMessage, `✓ Merged! Total ${metalName}: ${result.holding.quantity.toFixed(2)}g`, 'success');
+            } else {
+                showMessage(addMetalMessage, `✓ Added ${weightGrams.toFixed(2)}g of ${metalName}!`, 'success');
+            }
+            
+            metalTypeInput.value = '';
+            metalWeightInput.value = '';
+            loadPortfolio();
+        } else {
+            showMessage(addMetalMessage, `Error: ${data.error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(addMetalMessage, `Error: ${error.message}`, 'error');
+    }
+});
 // ========== Portfolio Display ==========
 
 // Load and display portfolio
@@ -465,6 +540,18 @@ async function loadPortfolio() {
                         <td><strong>${holding.symbol} (Cash)</strong></td>
                         <td>-</td>
                         <td>-</td>
+                        <td>${formatCurrency(holding.value, holding.currency)}</td>
+                        <td>${holding.market}</td>
+                        <td><button class="btn-remove" onclick="removeHolding(${index})">🗑️</button></td>
+                    </tr>
+                `;
+            } else if (holding.market === 'METAL') {
+                const weightDisplay = holding.weightGrams ? `${holding.weightGrams.toFixed(2)}g` : holding.quantity;
+                holdingsHTML += `
+                    <tr>
+                        <td><strong>${holding.symbol}</strong></td>
+                        <td>${weightDisplay}</td>
+                        <td>${formatCurrency(holding.price, holding.currency)}/oz</td>
                         <td>${formatCurrency(holding.value, holding.currency)}</td>
                         <td>${holding.market}</td>
                         <td><button class="btn-remove" onclick="removeHolding(${index})">🗑️</button></td>
