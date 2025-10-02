@@ -1,5 +1,9 @@
 const API_BASE = '/api/portfolio';
 
+// Global variables for sorting
+let currentSortColumn = null;
+let currentSortDirection = 'asc';
+
 // DOM Elements - US
 const addStockForm = document.getElementById('addStockForm');
 const symbolInput = document.getElementById('symbol');
@@ -132,6 +136,85 @@ function clearPortfolio() {
 }
 
 // ========== Helper Functions ==========
+
+// Function to sort portfolio by column
+function sortPortfolio(columnIndex, columnName) {
+    const portfolio = getPortfolio();
+    
+    if (portfolio.length === 0) return;
+    
+    // Toggle sort direction if clicking the same column
+    if (currentSortColumn === columnIndex) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortColumn = columnIndex;
+        currentSortDirection = 'asc';
+    }
+    
+    // Sort based on column
+    portfolio.sort((a, b) => {
+        let valueA, valueB;
+        
+        switch(columnName) {
+            case 'symbol':
+                valueA = a.symbol.toLowerCase();
+                valueB = b.symbol.toLowerCase();
+                break;
+                
+            case 'quantity':
+                // For metals, use weightGrams; for cash, use 0; otherwise use quantity
+                if (a.market === 'METAL') {
+                    valueA = a.weightGrams || a.quantity || 0;
+                } else if (a.market === 'CASH') {
+                    valueA = 0;
+                } else {
+                    valueA = a.quantity || 0;
+                }
+                
+                if (b.market === 'METAL') {
+                    valueB = b.weightGrams || b.quantity || 0;
+                } else if (b.market === 'CASH') {
+                    valueB = 0;
+                } else {
+                    valueB = b.quantity || 0;
+                }
+                break;
+                
+            case 'price':
+                valueA = a.price || 0;
+                valueB = b.price || 0;
+                break;
+                
+            case 'value':
+                valueA = a.value || 0;
+                valueB = b.value || 0;
+                break;
+                
+            case 'market':
+                valueA = a.market.toLowerCase();
+                valueB = b.market.toLowerCase();
+                break;
+                
+            default:
+                return 0;
+        }
+        
+        // Compare values
+        let comparison = 0;
+        if (valueA > valueB) {
+            comparison = 1;
+        } else if (valueA < valueB) {
+            comparison = -1;
+        }
+        
+        // Apply sort direction
+        return currentSortDirection === 'asc' ? comparison : -comparison;
+    });
+    
+    // Save sorted portfolio and reload
+    savePortfolio(portfolio);
+    loadPortfolio();
+}
 
 // Show message
 function showMessage(element, message, type) {
@@ -505,6 +588,7 @@ async function loadPortfolio() {
         if (portfolio.length === 0) {
             holdingsContainer.innerHTML = '<p class="empty-state">No holdings yet. Add your first stock above!</p>';
             totalValueContainer.innerHTML = '<p class="empty-state">Add stocks to see total value</p>';
+            currentSortColumn = null; // Reset sorting when portfolio is empty
             return;
         }
         
@@ -517,16 +601,38 @@ async function loadPortfolio() {
         
         const data = await response.json();
         
-        // Display holdings
+        // Helper function to get sort arrow and active class
+        const getSortArrow = (columnIndex) => {
+            if (currentSortColumn === columnIndex) {
+                return currentSortDirection === 'asc' ? ' ▲' : ' ▼';
+            }
+            return ' ⇅';
+        };
+        
+        const getActiveClass = (columnIndex) => {
+            return currentSortColumn === columnIndex ? ' active' : '';
+        };
+        
+        // Display holdings with sortable headers
         let holdingsHTML = `
             <table class="holdings-table">
                 <thead>
                     <tr>
-                        <th>Symbol</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                        <th>Value</th>
-                        <th>Market</th>
+                        <th class="sortable${getActiveClass(0)}" onclick="sortPortfolio(0, 'symbol')">
+                            Symbol${getSortArrow(0)}
+                        </th>
+                        <th class="sortable${getActiveClass(1)}" onclick="sortPortfolio(1, 'quantity')">
+                            Quantity${getSortArrow(1)}
+                        </th>
+                        <th class="sortable${getActiveClass(2)}" onclick="sortPortfolio(2, 'price')">
+                            Price${getSortArrow(2)}
+                        </th>
+                        <th class="sortable${getActiveClass(3)}" onclick="sortPortfolio(3, 'value')">
+                            Value${getSortArrow(3)}
+                        </th>
+                        <th class="sortable${getActiveClass(4)}" onclick="sortPortfolio(4, 'market')">
+                            Market${getSortArrow(4)}
+                        </th>
                         <th>Action</th>
                     </tr>
                 </thead>

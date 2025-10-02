@@ -249,3 +249,71 @@ header p {
         grid-template-columns: repeat(5, 1fr);
     }
 }
+
+/* Sortable table headers */
+.holdings-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s, color 0.2s;
+    position: relative;
+    padding-right: 20px;
+}
+
+.holdings-table th.sortable:hover {
+    background: #e2e8f0;
+    color: #2d3748;
+}
+
+.holdings-table th.sortable:active {
+    background: #cbd5e0;
+}
+
+/* Sort arrow styling */
+.holdings-table th.sortable::after {
+    opacity: 0.5;
+    font-size: 12px;
+    margin-left: 4px;
+}
+
+.holdings-table th.sortable:hover::after {
+    opacity: 1;
+}
+
+/* Add a subtle tooltip effect */
+.holdings-table th.sortable {
+    position: relative;
+}
+
+.holdings-table th.sortable:hover::before {
+    content: 'Click to sort';
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2d3748;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 10;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+/* Make sure the table header has enough space */
+.holdings-table thead {
+    position: relative;
+}
+
+/* Visual feedback for active sort column */
+.holdings-table th.sortable.active {
+    background: #e2e8f0;
+    font-weight: 700;
+}
