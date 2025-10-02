@@ -1,6 +1,6 @@
 # 📊 Multi-Currency Portfolio Tracker
 
-A privacy-focused web application for tracking equities, cryptocurrencies, and cash holdings across multiple markets with real-time currency conversion.
+A privacy-focused web application for tracking equities, cryptocurrencies, precious metals, and cash holdings across multiple markets with real-time currency conversion.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
@@ -12,7 +12,8 @@ A privacy-focused web application for tracking equities, cryptocurrencies, and c
 - 🇨🇦 **Canadian Equities** - Toronto Stock Exchange (TSX)
 - 🇭🇰 **Hong Kong Equities** - Hong Kong Stock Exchange (HKEX)
 - 🇹🇼 **Taiwan Equities** - Taiwan Stock Exchange (TWSE)
-- ₿ **Cryptocurrencies** - 19 major cryptocurrencies
+- ₿ **Cryptocurrencies** - Thousands of cryptocurrencies via CryptoCompare API
+- 🥇 **Precious Metals** - Gold, Silver, Platinum, Palladium
 - 💵 **Cash Holdings** - 11 currencies
 
 ### Multi-Currency Display
@@ -29,9 +30,11 @@ View your total portfolio value in **10 currencies**:
 - AUD (Australian Dollar)
 
 ### Key Features
-- ✅ **Real-time price updates** from Yahoo Finance & Binance
+- ✅ **Real-time price updates** from Yahoo Finance & CryptoCompare
 - ✅ **Privacy-first design** - All portfolio data stored locally in browser
-- ✅ **Multi-user support** - Each user has isolated portfolio
+- ✅ **Auto-merge holdings** - Automatically combines multiple purchases of the same asset
+- ✅ **Sortable portfolio table** - Click column headers to sort by any field
+- ✅ **Multi-user support** - Each user has isolated portfolio in their browser
 - ✅ **Automatic persistence** - Portfolio saved in localStorage
 - ✅ **No authentication required** - Quick and easy to use
 - ✅ **Responsive design** - Works on desktop and mobile
@@ -100,8 +103,8 @@ http://localhost:3000
 
 ### Optional: Without API Keys
 The app can work with limited functionality using free APIs:
-- Yahoo Finance (no key required) - for stock prices
-- Binance Public API (no key required) - for crypto prices
+- Yahoo Finance (no key required) - for stock and metal prices
+- CryptoCompare (no key required) - for cryptocurrency prices
 
 ## 📱 How to Use
 
@@ -128,11 +131,22 @@ The app can work with limited functionality using free APIs:
 3. Click "Add TW Stock"
 
 #### Cryptocurrencies
-**Supported:** BTC, ETH, USDT, BNB, SOL, ADA, XRP, DOT, DOGE, MATIC, AVAX, LINK, UNI, ATOM, LTC, BCH, ALGO, TRX, SHIB
+**Supports thousands of cryptocurrencies via CryptoCompare API**
 
-1. Enter crypto symbol (e.g., `BTC`, `ETH`)
-2. Enter quantity (supports decimals)
+Popular examples: BTC, ETH, USDT, BNB, SOL, XRP, ADA, DOGE, DOT, MATIC, AVAX, LINK, UNI, ATOM, LTC, BCH, ALGO, TRX, SHIB
+
+1. Enter crypto symbol (e.g., `BTC`, `ETH`, `SOL`)
+2. Enter quantity (supports decimals like 0.5)
 3. Click "Add Crypto"
+
+#### Precious Metals
+**Supported:** Gold (XAU), Silver (XAG), Platinum (XPT), Palladium (XPD)
+
+1. Select metal type
+2. Enter weight in grams
+3. Click "Add Metal"
+
+**Note:** 1 troy ounce = 31.1035 grams. Prices are quoted per troy ounce in USD.
 
 #### Cash
 1. Select currency
@@ -140,9 +154,11 @@ The app can work with limited functionality using free APIs:
 3. Click "Add Cash"
 
 ### Managing Portfolio
+- **Sort Holdings** - Click any column header to sort (Symbol, Quantity, Price, Value, Market)
 - **Refresh** - Updates prices and currency conversions
 - **Remove** - Click 🗑️ next to any holding
 - **Clear All** - Removes entire portfolio
+- **Auto-merge** - Adding the same asset multiple times automatically combines quantities
 
 ## 🏗️ Project Structure
 
@@ -158,9 +174,10 @@ portfolio-tracker/
 │   ├── routes/
 │   │   └── portfolio.js    # API routes (price lookup & calculations)
 │   ├── services/
-│   │   ├── stockService.js # Stock & crypto price fetching
+│   │   ├── stockService.js # Stock, crypto & metal price fetching
 │   │   └── currencyService.js  # Currency conversion
 │   └── index.js            # Express server
+├── test/                   # API testing scripts
 ├── .env                    # Environment variables (not in repo)
 ├── .gitignore
 ├── package.json
@@ -263,15 +280,24 @@ router.post('/price/jp', async (req, res) => {
 
 4. **Add form handler** in `public/app.js`
 
-### Adding New Cryptocurrencies
+### Testing APIs
 
-Edit `src/services/stockService.js`:
-```javascript
-this.cryptoIdMap = {
-    'BTC': 'bitcoin',
-    'YOUR_SYMBOL': 'coingecko-id',
-    // ...
-};
+The `test/` directory contains scripts to test various APIs:
+
+```bash
+# Test US stock API
+node test/test-us-api.js
+
+# Test cryptocurrency APIs
+node test/test-crypto-api.js
+
+# Test precious metals APIs
+node test/test-metals-api.js
+
+# Test other markets
+node test/test-ca-api.js  # Canada
+node test/test-hk-api.js  # Hong Kong
+node test/test-tw-api.js  # Taiwan
 ```
 
 ## 🐛 Troubleshooting
@@ -279,13 +305,13 @@ this.cryptoIdMap = {
 ### Common Issues
 
 **Problem:** Stock symbol not found
-- **Solution:** Verify symbol is correct for that market (e.g., Canadian stocks need TSX symbols)
+- **Solution:** Verify symbol is correct for that market (e.g., Canadian stocks need TSX symbols like SHOP, not SHOP.TO)
 
 **Problem:** Crypto price fails
-- **Solution:** Check if crypto is in supported list. App tries multiple APIs automatically.
+- **Solution:** CryptoCompare supports thousands of cryptocurrencies. Verify the symbol is correct.
 
 **Problem:** Portfolio disappeared
-- **Solution:** Portfolio is stored in browser localStorage. Clearing browser data will delete it.
+- **Solution:** Portfolio is stored in browser localStorage. Clearing browser data will delete it. Consider exporting your portfolio data regularly.
 
 **Problem:** Currency conversion slow
 - **Solution:** Exchange rate API has rate limits. Wait a moment and try again.
@@ -293,12 +319,16 @@ this.cryptoIdMap = {
 **Problem:** Prices not updating
 - **Solution:** Click "Refresh" button. Yahoo Finance may have rate limits during market hours.
 
+**Problem:** Metals not showing price
+- **Solution:** Yahoo Finance metals futures (GC=F, SI=F, etc.) may have delays. Try refreshing after a minute.
+
 ## 📊 Supported Assets
 
 ### Stocks by Market
 
 **US (NYSE/NASDAQ)**
 - Examples: AAPL, GOOGL, MSFT, AMZN, TSLA, NVDA, META
+- Format: Standard ticker symbol
 
 **Canada (TSX)**
 - Examples: SHOP, TD, RY, ENB, BMO, CNQ
@@ -313,10 +343,53 @@ this.cryptoIdMap = {
 - Format: 4-digit code
 
 ### Cryptocurrencies
-BTC, ETH, USDT, BNB, SOL, ADA, XRP, DOT, DOGE, MATIC, AVAX, LINK, UNI, ATOM, LTC, BCH, ALGO, TRX, SHIB
+
+**Supports thousands of cryptocurrencies via CryptoCompare API**
+
+Popular examples:
+- Major: BTC, ETH, USDT, BNB, SOL, XRP, ADA
+- DeFi: UNI, LINK, AVAX, MATIC, DOT, ATOM
+- Meme: DOGE, SHIB
+- Others: LTC, BCH, ALGO, TRX, and many more!
+
+### Precious Metals
+
+**Metals Tracked**
+- Gold (XAU) - Symbol: GC=F
+- Silver (XAG) - Symbol: SI=F
+- Platinum (XPT) - Symbol: PL=F
+- Palladium (XPD) - Symbol: PA=F
+
+**Format:** Weight in grams
+**Pricing:** USD per troy ounce (1 oz = 31.1035g)
+**Data Source:** Yahoo Finance futures prices
 
 ### Cash Currencies
+
 USD, CAD, HKD, TWD, CNY, EUR, GBP, JPY, KRW, AUD, SGD
+
+## ✨ New Features
+
+### Auto-Merge Holdings
+When you add the same asset multiple times, the app automatically:
+- Combines quantities for stocks and cryptocurrencies
+- Adds amounts for cash holdings
+- Adds weight for precious metals
+- Shows a "Merged!" message with the updated total
+
+### Sortable Portfolio Table
+Click any column header to sort your portfolio:
+- **Symbol** - Alphabetical order (A-Z or Z-A)
+- **Quantity** - Numerical order (handles stocks, crypto, metals, and cash)
+- **Price** - Sort by current price
+- **Value** - Sort by total holding value
+- **Market** - Group by market type
+
+Visual indicators:
+- ▲ Ascending sort
+- ▼ Descending sort
+- ⇅ Unsorted (hoverable)
+- Highlighted column when sorted
 
 ## 🤝 Contributing
 
@@ -327,6 +400,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 2. Test with multiple markets
 3. Maintain backward compatibility with localStorage format
 4. Update README for new features
+5. Add tests for new APIs in the `test/` directory
 
 ## 📄 License
 
@@ -334,9 +408,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **Yahoo Finance** - Stock price data
-- **Binance** - Cryptocurrency prices
-- **CryptoCompare** - Backup crypto prices
+- **Yahoo Finance** - Stock and precious metal price data
+- **CryptoCompare** - Cryptocurrency prices
 - **ExchangeRate-API** - Currency conversion
 
 ## 🗺️ Roadmap
@@ -345,10 +418,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] Price alerts
 - [ ] Historical performance charts
 - [ ] Dividend tracking
-- [ ] More markets (Japan, Korea, Europe)
+- [ ] More markets (Japan, Korea, Europe, China)
 - [ ] Mobile app (React Native)
 - [ ] Dark mode
 - [ ] PWA support for offline use
+- [ ] Portfolio analytics and insights
+- [ ] Cost basis tracking
 
 ## ⚠️ Disclaimer
 
