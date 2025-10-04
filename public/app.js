@@ -75,11 +75,16 @@ function savePortfolio(portfolio) {
 }
 
 // NEW: Add holding with auto-merge logic
+// Enhanced addHolding function to include price timestamp
 function addHolding(holding) {
     const portfolio = getPortfolio();
     
+    // Add price timestamp to new holdings (except cash)
+    if (holding.market !== 'CASH') {
+        holding.priceUpdatedAt = new Date().toISOString();
+    }
+    
     // Check if this asset already exists
-    // For metals, match by both symbol AND metalType
     const existingIndex = portfolio.findIndex(h => {
         if (holding.market === 'METAL' && h.market === 'METAL') {
             return h.symbol === holding.symbol && h.metalType === holding.metalType;
@@ -101,11 +106,13 @@ function addHolding(holding) {
             existing.quantity = existing.weightGrams;
             existing.price = holding.price; // Update to latest price per oz
             existing.value = existing.weightGrams * (holding.price / 31.1035); // Recalculate value
+            existing.priceUpdatedAt = holding.priceUpdatedAt; // Update price timestamp
         } else {
             // For stocks/crypto, add quantities and recalculate
             existing.quantity += holding.quantity;
             existing.price = holding.price;
             existing.value = existing.quantity * existing.price;
+            existing.priceUpdatedAt = holding.priceUpdatedAt; // Update price timestamp
         }
         
         existing.addedAt = new Date().toISOString();
@@ -122,6 +129,7 @@ function addHolding(holding) {
         return { merged: false, holding };
     }
 }
+
 
 // Remove holding from portfolio
 function removeHoldingAtIndex(index) {
@@ -710,6 +718,173 @@ async function loadPortfolio() {
     }
 }
 
+// Main function to refresh all prices
+async function refreshAllPrices() {
+    const portfolio = getPortfolio();
+    
+    if (portfolio.length === 0) {
+        showMessage(addStockMessage, 'No holdings to refresh', 'error');
+        return;
+    }
+    
+    // Filter out cash holdings - they don't need price updates
+    const holdingsToRefresh = portfolio.filter(holding => holding.market !== 'CASH');
+    
+    if (holdingsToRefresh.length === 0) {
+        showMessage(addStockMessage, 'Only cash holdings found - no prices to refresh', 'success');
+        await loadPortfolio(); // Still reload to update currency conversions
+        return;
+    }
+    
+    showMessage(addStockMessage, `🔄 Refreshing ${holdingsToRefresh.length} prices...`, 'loading');
+    
+    // Create refresh promises for all holdings
+    const refreshPromises = holdingsToRefresh.map((holding, originalIndex) => {
+        // Find the original index in the full portfolio
+        const portfolioIndex = portfolio.indexOf(holding);
+        return refreshSingleHolding(holding, portfolioIndex);
+    });
+    
+    try {
+        // Execute all price refresh requests in parallel
+        const results = await Promise.allSettled(refreshPromises);
+        
+        let successCount = 0;
+        let failCount = 0;
+        
+        // Process results and update portfolio
+        for (const result of results) {
+            if (result.status === 'fulfilled' && result.value) {
+                const { index, updatedHolding } = result.value;
+                portfolio[index] = updatedHolding;
+                successCount++;
+            } else {
+                failCount++;
+                console.error('Refresh failed:', result.reason);
+            }
+        }
+        
+        // Save updated portfolio
+        if (successCount > 0) {
+            savePortfolio(portfolio);
+        }
+        
+        // Show appropriate success/error message
+        if (successCount === holdingsToRefresh.length) {
+            showMessage(addStockMessage, `✅ All ${successCount} prices refreshed successfully!`, 'success');
+        } else if (successCount > 0) {
+            showMessage(addStockMessage, `⚠️ ${successCount} prices refreshed, ${failCount} failed`, 'error');
+        } else {
+            showMessage(addStockMessage, `❌ Failed to refresh prices. Please try again.`, 'error');
+        }
+        
+    } catch (error) {
+        showMessage(addStockMessage, `❌ Error refreshing prices: ${error.message}`, 'error');
+    }
+    
+    // Always reload portfolio display to show updated data
+    await loadPortfolio();
+}
+
+// Function to refresh a single holding's price
+async function refreshSingleHolding(holding, portfolioIndex) {
+    try {
+        let response;
+        let requestBody;
+        
+        // Determine which API endpoint to call based on market
+        switch (holding.market) {
+            case 'US':
+                response = await fetch(`${API_BASE}/price/us`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol: holding.symbol })
+                });
+                break;
+                
+            case 'CA':
+                response = await fetch(`${API_BASE}/price/ca`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol: holding.symbol })
+                });
+                break;
+                
+            case 'HK':
+                response = await fetch(`${API_BASE}/price/hk`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol: holding.symbol })
+                });
+                break;
+                
+            case 'TW':
+                response = await fetch(`${API_BASE}/price/tw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol: holding.symbol })
+                });
+                break;
+                
+            case 'CRYPTO':
+                response = await fetch(`${API_BASE}/price/crypto`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol: holding.symbol })
+                });
+                break;
+                
+            case 'METAL':
+                response = await fetch(`${API_BASE}/price/metal`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        symbol: holding.metalType, 
+                        weightGrams: holding.weightGrams || holding.quantity 
+                    })
+                });
+                break;
+                
+            default:
+                throw new Error(`Unknown market type: ${holding.market}`);
+        }
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP ${response.status}`);
+        }
+        
+        const priceData = await response.json();
+        
+        // Create updated holding with new price data
+        const updatedHolding = { ...holding };
+        updatedHolding.priceUpdatedAt = new Date().toISOString();
+        
+        // Update price and value based on market type
+        if (holding.market === 'METAL') {
+            updatedHolding.price = priceData.pricePerOunce;
+            updatedHolding.value = priceData.totalValue;
+        } else {
+            updatedHolding.price = priceData.price;
+            
+            // Recalculate value based on quantity and new price
+            if (holding.market === 'CRYPTO') {
+                updatedHolding.value = updatedHolding.quantity * priceData.price;
+            } else {
+                updatedHolding.value = updatedHolding.quantity * priceData.price;
+            }
+        }
+        
+        return {
+            index: portfolioIndex,
+            updatedHolding: updatedHolding
+        };
+        
+    } catch (error) {
+        console.error(`Failed to refresh ${holding.symbol} (${holding.market}):`, error.message);
+        throw new Error(`${holding.symbol}: ${error.message}`);
+    }
+}
 // Remove holding
 function removeHolding(index) {
     if (!confirm('Are you sure you want to remove this holding?')) {
@@ -733,9 +908,8 @@ clearBtn.addEventListener('click', () => {
 });
 
 // Refresh button
-refreshBtn.addEventListener('click', () => {
-    showMessage(addStockMessage, '🔄 Refreshing prices...', 'success');
-    loadPortfolio();
+refreshBtn.addEventListener('click', async () => {
+    await refreshAllPrices();
 });
 
 // Load portfolio on page load
