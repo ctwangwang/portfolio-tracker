@@ -885,6 +885,7 @@ async function refreshSingleHolding(holding, portfolioIndex) {
         throw new Error(`${holding.symbol}: ${error.message}`);
     }
 }
+
 // Remove holding
 function removeHolding(index) {
     if (!confirm('Are you sure you want to remove this holding?')) {
