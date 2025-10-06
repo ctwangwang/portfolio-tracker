@@ -86,8 +86,7 @@ function savePortfolio(portfolio) {
     }
 }
 
-// NEW: Add holding with auto-merge logic
-// Enhanced addHolding function to include price timestamp
+// Enhanced addHolding function to include order numbers
 function addHolding(holding) {
     const portfolio = getPortfolio();
     
@@ -105,7 +104,7 @@ function addHolding(holding) {
     });
     
     if (existingIndex !== -1) {
-        // Asset exists - merge quantities
+        // Asset exists - merge quantities but keep original order number
         const existing = portfolio[existingIndex];
         
         if (holding.market === 'CASH') {
@@ -134,7 +133,14 @@ function addHolding(holding) {
         
         return { merged: true, holding: existing };
     } else {
-        // New asset - add to portfolio
+        // New asset - add order number and add to portfolio
+        // Calculate next order number
+        const maxOrder = portfolio.length > 0 
+            ? Math.max(...portfolio.map(h => h.orderNumber || 0))
+            : 0;
+        
+        holding.orderNumber = maxOrder + 1;
+        
         portfolio.push(holding);
         savePortfolio(portfolio);
         
@@ -176,6 +182,11 @@ function sortPortfolio(columnIndex, columnName) {
         let valueA, valueB;
         
         switch(columnName) {
+            case 'order':
+                valueA = a.orderNumber || 0;
+                valueB = b.orderNumber || 0;
+                break;
+                
             case 'symbol':
                 valueA = a.symbol.toLowerCase();
                 valueB = b.symbol.toLowerCase();
@@ -407,7 +418,7 @@ addHKStockForm.addEventListener('submit', async (e) => {
 addTWStockForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const symbol = twSymbolInput.value.trim();
+    const symbol = twSymbolInput.value.trim().toUpperCase();
     const quantity = parseInt(twQuantityInput.value);
     
     try {
@@ -731,25 +742,28 @@ async function loadPortfolio() {
             return currentSortColumn === columnIndex ? ' active' : '';
         };
         
-        // Display holdings with sortable headers
+        // Display holdings with sortable headers including order number
         let holdingsHTML = `
             <table class="holdings-table">
                 <thead>
                     <tr>
-                        <th class="sortable${getActiveClass(0)}" onclick="sortPortfolio(0, 'symbol')">
-                            Symbol${getSortArrow(0)}
+                        <th class="sortable${getActiveClass(0)}" onclick="sortPortfolio(0, 'order')">
+                            #${getSortArrow(0)}
                         </th>
-                        <th class="sortable${getActiveClass(1)}" onclick="sortPortfolio(1, 'quantity')">
-                            Quantity${getSortArrow(1)}
+                        <th class="sortable${getActiveClass(1)}" onclick="sortPortfolio(1, 'symbol')">
+                            Symbol${getSortArrow(1)}
                         </th>
-                        <th class="sortable${getActiveClass(2)}" onclick="sortPortfolio(2, 'price')">
-                            Price${getSortArrow(2)}
+                        <th class="sortable${getActiveClass(2)}" onclick="sortPortfolio(2, 'quantity')">
+                            Quantity${getSortArrow(2)}
                         </th>
-                        <th class="sortable${getActiveClass(3)}" onclick="sortPortfolio(3, 'value')">
-                            Value${getSortArrow(3)}
+                        <th class="sortable${getActiveClass(3)}" onclick="sortPortfolio(3, 'price')">
+                            Price${getSortArrow(3)}
                         </th>
-                        <th class="sortable${getActiveClass(4)}" onclick="sortPortfolio(4, 'market')">
-                            Market${getSortArrow(4)}
+                        <th class="sortable${getActiveClass(4)}" onclick="sortPortfolio(4, 'value')">
+                            Value${getSortArrow(4)}
+                        </th>
+                        <th class="sortable${getActiveClass(5)}" onclick="sortPortfolio(5, 'market')">
+                            Market${getSortArrow(5)}
                         </th>
                         <th>Action</th>
                     </tr>
@@ -758,9 +772,12 @@ async function loadPortfolio() {
         `;
         
         portfolio.forEach((holding, index) => {
+            const orderNum = holding.orderNumber || index + 1;
+            
             if (holding.market === 'CASH') {
                 holdingsHTML += `
                     <tr>
+                        <td><strong>${orderNum}</strong></td>
                         <td><strong>${holding.symbol} (Cash)</strong></td>
                         <td>-</td>
                         <td>-</td>
@@ -773,6 +790,7 @@ async function loadPortfolio() {
                 const weightDisplay = holding.weightGrams ? `${holding.weightGrams.toFixed(2)}g` : holding.quantity;
                 holdingsHTML += `
                     <tr>
+                        <td><strong>${orderNum}</strong></td>
                         <td><strong>${holding.symbol}</strong></td>
                         <td>${weightDisplay}</td>
                         <td>${formatCurrency(holding.price, holding.currency)}/oz</td>
@@ -784,6 +802,7 @@ async function loadPortfolio() {
             } else {
                 holdingsHTML += `
                     <tr>
+                        <td><strong>${orderNum}</strong></td>
                         <td><strong>${holding.symbol}</strong></td>
                         <td>${holding.quantity}</td>
                         <td>${formatCurrency(holding.price, holding.currency)}</td>
@@ -935,7 +954,7 @@ async function refreshSingleHolding(holding, portfolioIndex) {
                     body: JSON.stringify({ symbol: holding.symbol })
                 });
                 break;
-            
+
             case 'SS':
                 response = await fetch(`${API_BASE}/price/ss`, {
                     method: 'POST',
@@ -951,7 +970,7 @@ async function refreshSingleHolding(holding, portfolioIndex) {
                     body: JSON.stringify({ symbol: holding.symbol })
                 });
                 break;
-                
+
             case 'CRYPTO':
                 response = await fetch(`${API_BASE}/price/crypto`, {
                     method: 'POST',

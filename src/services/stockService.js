@@ -81,31 +81,55 @@ class StockService {
     }
   }
 
-  // Taiwan stock method
-  async getTWStockPrice(symbol) {
+  // Taiwan stock method - Updated to handle both stocks and ETFs
+async getTWStockPrice(symbol) {
     try {
       let formattedSymbol = symbol;
       
-      if (!symbol.includes('.TW')) {
+      // Don't modify if it already has a suffix
+      if (!symbol.includes('.TW') && !symbol.includes('.TWO')) {
+        // Try .TW first (for regular stocks)
         formattedSymbol = `${symbol}.TW`;
       }
       
-      const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${formattedSymbol}`, {
-        params: {
-          interval: '1d',
-          range: '1d'
-        },
-        headers: {
-          'User-Agent': 'Mozilla/5.0'
+      let response;
+      
+      try {
+        response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${formattedSymbol}`, {
+          params: {
+            interval: '1d',
+            range: '1d'
+          },
+          headers: {
+            'User-Agent': 'Mozilla/5.0'
+          }
+        });
+      } catch (error) {
+        // If .TW fails and symbol looks like an ETF (contains letters), try .TWO
+        if (error.response?.status === 404 && /[A-Z]/i.test(symbol)) {
+          console.log(`Trying .TWO suffix for ${symbol}...`);
+          formattedSymbol = `${symbol}.TWO`;
+          
+          response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${formattedSymbol}`, {
+            params: {
+              interval: '1d',
+              range: '1d'
+            },
+            headers: {
+              'User-Agent': 'Mozilla/5.0'
+            }
+          });
+        } else {
+          throw error;
         }
-      });
-
+      }
+  
       const result = response.data.chart.result[0];
       
       if (!result || !result.meta || !result.meta.regularMarketPrice) {
         throw new Error(`No data found for Taiwan symbol: ${symbol}`);
       }
-
+  
       const price = result.meta.regularMarketPrice;
       
       return {
