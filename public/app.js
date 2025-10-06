@@ -28,6 +28,18 @@ const twSymbolInput = document.getElementById('twSymbol');
 const twQuantityInput = document.getElementById('twQuantity');
 const addTWStockMessage = document.getElementById('addTWStockMessage');
 
+// Shanghai DOM Elements
+const addSSStockForm = document.getElementById('addSSStockForm');
+const ssSymbolInput = document.getElementById('ssSymbol');
+const ssQuantityInput = document.getElementById('ssQuantity');
+const addSSStockMessage = document.getElementById('addSSStockMessage');
+
+// Shenzhen DOM Elements
+const addSZStockForm = document.getElementById('addSZStockForm');
+const szSymbolInput = document.getElementById('szSymbol');
+const szQuantityInput = document.getElementById('szQuantity');
+const addSZStockMessage = document.getElementById('addSZStockMessage');
+
 // Cash DOM Elements
 const addCashForm = document.getElementById('addCashForm');
 const cashCurrencyInput = document.getElementById('cashCurrency');
@@ -440,6 +452,104 @@ addTWStockForm.addEventListener('submit', async (e) => {
     }
 });
 
+// Add Shanghai stock
+addSSStockForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const symbol = ssSymbolInput.value.trim();
+    const quantity = parseInt(ssQuantityInput.value);
+    
+    try {
+        addSSStockMessage.textContent = 'Fetching price...';
+        addSSStockMessage.className = 'message loading';
+        
+        const response = await fetch(`${API_BASE}/price/ss`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ symbol })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            const holding = {
+                symbol: data.symbol,
+                quantity: quantity,
+                price: data.price,
+                currency: data.currency,
+                value: data.price * quantity,
+                market: 'SS',
+                addedAt: new Date().toISOString()
+            };
+            
+            const result = addHolding(holding);
+            
+            if (result.merged) {
+                showMessage(addSSStockMessage, `✓ Merged! Now you have ${result.holding.quantity} shares of ${symbol} (SS)`, 'success');
+            } else {
+                showMessage(addSSStockMessage, `✓ Added ${quantity} shares of ${symbol} (SS)!`, 'success');
+            }
+            
+            ssSymbolInput.value = '';
+            ssQuantityInput.value = '';
+            loadPortfolio();
+        } else {
+            showMessage(addSSStockMessage, `Error: ${data.error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(addSSStockMessage, `Error: ${error.message}`, 'error');
+    }
+});
+
+// Add Shenzhen stock
+addSZStockForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const symbol = szSymbolInput.value.trim();
+    const quantity = parseInt(szQuantityInput.value);
+    
+    try {
+        addSZStockMessage.textContent = 'Fetching price...';
+        addSZStockMessage.className = 'message loading';
+        
+        const response = await fetch(`${API_BASE}/price/sz`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ symbol })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            const holding = {
+                symbol: data.symbol,
+                quantity: quantity,
+                price: data.price,
+                currency: data.currency,
+                value: data.price * quantity,
+                market: 'SZ',
+                addedAt: new Date().toISOString()
+            };
+            
+            const result = addHolding(holding);
+            
+            if (result.merged) {
+                showMessage(addSZStockMessage, `✓ Merged! Now you have ${result.holding.quantity} shares of ${symbol} (SZ)`, 'success');
+            } else {
+                showMessage(addSZStockMessage, `✓ Added ${quantity} shares of ${symbol} (SZ)!`, 'success');
+            }
+            
+            szSymbolInput.value = '';
+            szQuantityInput.value = '';
+            loadPortfolio();
+        } else {
+            showMessage(addSZStockMessage, `Error: ${data.error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(addSZStockMessage, `Error: ${error.message}`, 'error');
+    }
+});
+
 // Add Cash
 addCashForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -820,6 +930,22 @@ async function refreshSingleHolding(holding, portfolioIndex) {
                 
             case 'TW':
                 response = await fetch(`${API_BASE}/price/tw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol: holding.symbol })
+                });
+                break;
+            
+            case 'SS':
+                response = await fetch(`${API_BASE}/price/ss`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol: holding.symbol })
+                });
+                break;
+                
+            case 'SZ':
+                response = await fetch(`${API_BASE}/price/sz`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ symbol: holding.symbol })

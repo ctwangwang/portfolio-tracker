@@ -81,6 +81,45 @@
             <div id="addTWStockMessage" class="message"></div>
         </div>
 
+        <!-- Add Shanghai Stock Form -->
+        <div class="card">
+            <h2>🇨🇳 Add Shanghai Stock (SSE)</h2>
+            <form id="addSSStockForm">
+                <div class="form-group">
+                    <label for="ssSymbol">Stock Code (Shanghai):</label>
+                    <input type="text" id="ssSymbol" placeholder="e.g., 600519 (Moutai), 601318 (Ping An)" required>
+                    <small style="color: #718096; margin-top: 4px; display: block;">
+                        Shanghai stocks: 600xxx, 601xxx, 603xxx, 688xxx
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label for="ssQuantity">Quantity:</label>
+                    <input type="number" id="ssQuantity" min="1" placeholder="e.g., 100" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Shanghai Stock</button>
+            </form>
+            <div id="addSSStockMessage" class="message"></div>
+        </div>
+
+        <!-- Add Shenzhen Stock Form -->
+        <div class="card">
+            <h2>🇨🇳 Add Shenzhen Stock (SZSE)</h2>
+            <form id="addSZStockForm">
+                <div class="form-group">
+                    <label for="szSymbol">Stock Code (Shenzhen):</label>
+                    <input type="text" id="szSymbol" placeholder="e.g., 000858 (Wuliangye), 000001 (Ping An Bank)" required>
+                    <small style="color: #718096; margin-top: 4px; display: block;">
+                        Shenzhen stocks: 000xxx, 001xxx, 002xxx, 003xxx, 300xxx
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label for="szQuantity">Quantity:</label>
+                    <input type="number" id="szQuantity" min="1" placeholder="e.g., 100" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Shenzhen Stock</button>
+            </form>
+            <div id="addSZStockMessage" class="message"></div>
+        </div>
         <!-- Add Cash Form -->
         <div class="card">
             <h2>💵 Add Cash</h2>

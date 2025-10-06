@@ -89,6 +89,47 @@ router.post('/price/tw', async (req, res) => {
     }
 });
 
+// Get Shanghai stock price
+router.post('/price/ss', async (req, res) => {
+    try {
+        const { symbol } = req.body;
+        
+        if (!symbol) {
+            return res.status(400).json({ error: 'Symbol is required' });
+        }
+        
+        const stockData = await stockService.getSSStockPrice(symbol);
+        
+        res.json({
+            symbol: stockData.symbol,
+            price: stockData.price,
+            currency: stockData.currency
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get Shenzhen stock price
+router.post('/price/sz', async (req, res) => {
+    try {
+        const { symbol } = req.body;
+        
+        if (!symbol) {
+            return res.status(400).json({ error: 'Symbol is required' });
+        }
+        
+        const stockData = await stockService.getSZStockPrice(symbol);
+        
+        res.json({
+            symbol: stockData.symbol,
+            price: stockData.price,
+            currency: stockData.currency
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 // Get crypto price
 router.post('/price/crypto', async (req, res) => {
     try {

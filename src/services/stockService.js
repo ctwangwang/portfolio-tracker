@@ -121,6 +121,85 @@ class StockService {
     }
   }
 
+  // Shanghai Stock Exchange method
+async getSSStockPrice(symbol) {
+    try {
+      let formattedSymbol = symbol;
+      
+      if (!symbol.includes('.SS')) {
+        formattedSymbol = `${symbol}.SS`;
+      }
+      
+      const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${formattedSymbol}`, {
+        params: {
+          interval: '1d',
+          range: '1d'
+        },
+        headers: {
+          'User-Agent': 'Mozilla/5.0'
+        }
+      });
+  
+      const result = response.data.chart.result[0];
+      
+      if (!result || !result.meta || !result.meta.regularMarketPrice) {
+        throw new Error(`No data found for Shanghai symbol: ${symbol}`);
+      }
+  
+      const price = result.meta.regularMarketPrice;
+      
+      return {
+        symbol: symbol,
+        price: parseFloat(price),
+        currency: 'CNY'
+      };
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error(`Stock symbol ${symbol} not found. Please check the symbol.`);
+      }
+      throw new Error(`Failed to fetch Shanghai stock price for ${symbol}: ${error.message}`);
+    }
+  }
+  
+  // Shenzhen Stock Exchange method
+  async getSZStockPrice(symbol) {
+    try {
+      let formattedSymbol = symbol;
+      
+      if (!symbol.includes('.SZ')) {
+        formattedSymbol = `${symbol}.SZ`;
+      }
+      
+      const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${formattedSymbol}`, {
+        params: {
+          interval: '1d',
+          range: '1d'
+        },
+        headers: {
+          'User-Agent': 'Mozilla/5.0'
+        }
+      });
+  
+      const result = response.data.chart.result[0];
+      
+      if (!result || !result.meta || !result.meta.regularMarketPrice) {
+        throw new Error(`No data found for Shenzhen symbol: ${symbol}`);
+      }
+  
+      const price = result.meta.regularMarketPrice;
+      
+      return {
+        symbol: symbol,
+        price: parseFloat(price),
+        currency: 'CNY'
+      };
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error(`Stock symbol ${symbol} not found. Please check the symbol.`);
+      }
+      throw new Error(`Failed to fetch Shenzhen stock price for ${symbol}: ${error.message}`);
+    }
+  }
   // Canada stock method
   async getCAStockPrice(symbol) {
     try {

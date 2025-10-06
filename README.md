@@ -12,6 +12,7 @@ A privacy-focused web application for tracking equities, cryptocurrencies, preci
 - 🇨🇦 **Canadian Equities** - Toronto Stock Exchange (TSX)
 - 🇭🇰 **Hong Kong Equities** - Hong Kong Stock Exchange (HKEX)
 - 🇹🇼 **Taiwan Equities** - Taiwan Stock Exchange (TWSE)
+- 🇨🇳 **China Equities** - Shanghai Stock Exchange (SSE) & Shenzhen Stock Exchange (SZSE)
 - ₿ **Cryptocurrencies** - Thousands of cryptocurrencies via CryptoCompare API
 - 🥇 **Precious Metals** - Gold, Silver, Platinum, Palladium
 - 💵 **Cash Holdings** - 11 currencies
@@ -129,6 +130,20 @@ The app can work with limited functionality using free APIs:
 1. Enter stock code (e.g., `2330` for TSMC, `2317` for Foxconn)
 2. Enter quantity
 3. Click "Add TW Stock"
+
+#### Shanghai Stocks (SSE)
+1. Enter stock code (e.g., `600519` for Moutai, `601318` for Ping An)
+2. Enter quantity
+3. Click "Add Shanghai Stock"
+
+**Common codes**: 600xxx, 601xxx, 603xxx, 688xxx
+
+#### Shenzhen Stocks (SZSE)
+1. Enter stock code (e.g., `000858` for Wuliangye, `000001` for Ping An Bank)
+2. Enter quantity
+3. Click "Add Shenzhen Stock"
+
+**Common codes**: 000xxx, 001xxx, 002xxx, 003xxx, 300xxx
 
 #### Cryptocurrencies
 **Supports thousands of cryptocurrencies via CryptoCompare API**
