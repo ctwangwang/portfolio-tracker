@@ -67,7 +67,6 @@ cp .env.example .env
 
 Edit `.env` and add your API keys:
 ```env
-FINNHUB_API_KEY=your_finnhub_key_here
 EXCHANGE_RATE_API_KEY=your_exchange_rate_key_here
 PORT=3000
 ```
@@ -90,13 +89,7 @@ http://localhost:3000
 
 ### Required APIs
 
-#### 1. Finnhub API (Optional - backup for some markets)
-- **Purpose:** Stock price data
-- **Free Tier:** 60 calls/minute
-- **Sign up:** https://finnhub.io/register
-- **Cost:** Free tier available
-
-#### 2. ExchangeRate-API
+#### 1. ExchangeRate-API
 - **Purpose:** Currency conversion
 - **Free Tier:** 1,500 requests/month
 - **Sign up:** https://www.exchangerate-api.com/
@@ -236,7 +229,6 @@ portfolio-tracker/
    - Start Command: `npm start`
 
 4. **Add environment variables**
-   - `FINNHUB_API_KEY`
    - `EXCHANGE_RATE_API_KEY`
 
 5. **Deploy**
@@ -247,7 +239,6 @@ portfolio-tracker/
 #### Heroku
 ```bash
 heroku create your-app-name
-heroku config:set FINNHUB_API_KEY=your_key
 heroku config:set EXCHANGE_RATE_API_KEY=your_key
 git push heroku main
 ```
